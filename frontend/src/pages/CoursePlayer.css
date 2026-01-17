@@ -1,0 +1,271 @@
+.course-player {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  height: calc(100vh - 80px);
+  background-color: var(--bg-secondary);
+}
+
+.course-sidebar {
+  background: white;
+  border-right: 1px solid var(--gray-200);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.course-info {
+  padding: 1.5rem;
+  border-bottom: 2px solid var(--gray-200);
+  background-color: var(--primary-dark);
+  color: white;
+}
+
+.course-info h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.progress-info {
+  margin-top: 1rem;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--gray-200);
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--secondary-green), var(--secondary-orange));
+  transition: width 0.3s;
+}
+
+.modules-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.module-item {
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.module-header {
+  padding: 1rem 1.5rem;
+  background-color: var(--gray-50);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.module-header h3 {
+  font-size: 1rem;
+  color: var(--primary-dark);
+}
+
+.module-progress {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.lessons-list {
+  padding: 0.5rem 0;
+}
+
+.lesson-item {
+  padding: 1rem 1.5rem;
+  display: flex;
+  gap: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.lesson-item:hover {
+  background-color: var(--gray-50);
+}
+
+.lesson-item.active {
+  background-color: var(--primary-blue);
+  color: white;
+}
+
+.lesson-item.active .lesson-title,
+.lesson-item.active .lesson-meta {
+  color: white !important;
+}
+
+.lesson-item.completed .lesson-status {
+  color: var(--secondary-green);
+  font-weight: bold;
+}
+
+.lesson-item.active .lesson-status {
+  color: white;
+}
+
+.lesson-status {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.lesson-info {
+  flex-grow: 1;
+}
+
+.lesson-title {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--primary-dark);
+}
+
+.lesson-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 1rem;
+}
+
+/* Main Content Area */
+.course-content {
+  overflow-y: auto;
+}
+
+.content-area {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.content-header h1 {
+  color: var(--primary-dark);
+  font-size: 2rem;
+}
+
+.lesson-type {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+.content-display {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  background-color: black;
+  border-radius: var(--radius-md);
+}
+
+.video-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pdf-container iframe {
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+.text-content {
+  line-height: 1.8;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.link-content {
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.lesson-description {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.lesson-description h3 {
+  color: var(--primary-dark);
+  margin-bottom: 1rem;
+}
+
+.lesson-description p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.lesson-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.lesson-controls .btn {
+  flex: 1;
+}
+
+.lesson-controls .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .course-player {
+    grid-template-columns: 300px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .course-player {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .course-sidebar {
+    position: static;
+    max-height: 400px;
+  }
+
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .lesson-controls {
+    flex-direction: column;
+  }
+}
