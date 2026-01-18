@@ -12,10 +12,9 @@ const AdminDashboard = () => {
     totalStudents: 0,
     totalTeachers: 0
   });
-  const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('courses');
 
   useEffect(() => {
     fetchDashboardData();
@@ -23,17 +22,14 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Note: You'll need to create these admin endpoints in the backend
-      // For now, using existing endpoints
       const [coursesRes] = await Promise.all([
         api.get('/courses')
       ]);
       
       setCourses(coursesRes.data.data);
       
-      // Calculate stats
       setStats({
-        totalUsers: 0,  // Update when admin endpoints are created
+        totalUsers: 0,
         totalCourses: coursesRes.data.data.length,
         totalStudents: 0,
         totalTeachers: 0
@@ -52,13 +48,11 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <div className="container">
-        {/* Header */}
         <div className="dashboard-header">
           <h1>Admin Dashboard</h1>
           <p>Platform Overview & Management</p>
         </div>
 
-        {/* Stats */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">👥</div>
@@ -93,7 +87,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="tabs">
           <button
             className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
@@ -109,7 +102,6 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="tab-content">
           {activeTab === 'users' && (
             <div className="section">

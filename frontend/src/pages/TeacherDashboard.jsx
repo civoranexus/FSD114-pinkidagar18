@@ -26,7 +26,6 @@ const TeacherDashboard = () => {
       const { data } = await api.get('/courses/teacher/my-courses');
       setCourses(data.data);
 
-      // Calculate stats
       const totalCourses = data.data.length;
       const publishedCourses = data.data.filter(c => c.status === 'published').length;
       const totalStudents = data.data.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
@@ -64,18 +63,16 @@ const TeacherDashboard = () => {
   return (
     <div className="teacher-dashboard">
       <div className="container">
-        {/* Header */}
         <div className="dashboard-header">
           <div>
             <h1>Teacher Dashboard</h1>
             <p>Welcome, {user.name}</p>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/teacher/create-course')}>
+          <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
             + Create New Course
           </button>
         </div>
 
-        {/* Stats */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">📚</div>
@@ -110,14 +107,13 @@ const TeacherDashboard = () => {
           </div>
         </div>
 
-        {/* My Courses */}
         <div className="section">
           <h2>My Courses</h2>
 
           {courses.length === 0 ? (
             <div className="empty-state">
               <p>You haven't created any courses yet.</p>
-              <button className="btn btn-primary" onClick={() => navigate('/teacher/create-course')}>
+              <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
                 Create Your First Course
               </button>
             </div>
@@ -161,12 +157,12 @@ const TeacherDashboard = () => {
                           >
                             View
                           </Link>
-                          <Link
-                            to={`/teacher/course/${course._id}/edit`}
+                          <button
+                            onClick={() => toast.info('Edit feature coming soon!')}
                             className="btn btn-sm btn-primary"
                           >
                             Edit
-                          </Link>
+                          </button>
                           <button
                             onClick={() => handleDeleteCourse(course._id)}
                             className="btn btn-sm btn-danger"

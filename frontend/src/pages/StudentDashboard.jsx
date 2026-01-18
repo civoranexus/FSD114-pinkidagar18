@@ -38,13 +38,11 @@ const StudentDashboard = () => {
   return (
     <div className="student-dashboard">
       <div className="container">
-        {/* Header */}
         <div className="dashboard-header">
           <h1>Welcome back, {user.name}!</h1>
           <p>Continue your learning journey</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">📚</div>
@@ -83,7 +81,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Enrolled Courses */}
         <div className="section">
           <div className="section-header">
             <h2>My Courses</h2>
@@ -115,7 +112,6 @@ const StudentDashboard = () => {
                       <h3>{course.title}</h3>
                       <p className="course-instructor">By {course.instructor?.name}</p>
                       
-                      {/* Progress Bar */}
                       <div className="progress-section">
                         <div className="progress-header">
                           <span>Progress</span>

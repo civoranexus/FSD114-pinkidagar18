@@ -30,7 +30,6 @@ const CoursePlayer = () => {
       setCourse(courseRes.data.data);
       setProgress(progressRes.data.data);
 
-      // Set last accessed lesson or start from beginning
       if (progressRes.data.data.lastAccessedLesson) {
         const moduleIndex = courseRes.data.data.modules.findIndex(
           m => m._id === progressRes.data.data.lastAccessedLesson.moduleId
@@ -63,8 +62,6 @@ const CoursePlayer = () => {
 
       setProgress(data.data);
       toast.success('Lesson marked as complete!');
-
-      // Move to next lesson if available
       goToNextLesson();
     } catch (error) {
       toast.error('Failed to mark lesson complete');
@@ -94,12 +91,9 @@ const CoursePlayer = () => {
   const goToNextLesson = () => {
     const currentModuleObj = course.modules[currentModule];
     
-    // Check if there's a next lesson in current module
     if (currentLesson < currentModuleObj.lessons.length - 1) {
       goToLesson(currentModule, currentLesson + 1);
-    }
-    // Check if there's a next module
-    else if (currentModule < course.modules.length - 1) {
+    } else if (currentModule < course.modules.length - 1) {
       goToLesson(currentModule + 1, 0);
     } else {
       toast.success('Congratulations! You\'ve completed the course!');
@@ -107,12 +101,9 @@ const CoursePlayer = () => {
   };
 
   const goToPrevLesson = () => {
-    // Check if there's a previous lesson in current module
     if (currentLesson > 0) {
       goToLesson(currentModule, currentLesson - 1);
-    }
-    // Check if there's a previous module
-    else if (currentModule > 0) {
+    } else if (currentModule > 0) {
       const prevModule = course.modules[currentModule - 1];
       goToLesson(currentModule - 1, prevModule.lessons.length - 1);
     }
@@ -135,7 +126,6 @@ const CoursePlayer = () => {
 
   return (
     <div className="course-player">
-      {/* Sidebar */}
       <div className="course-sidebar">
         <div className="course-info">
           <h2>{course.title}</h2>
@@ -152,7 +142,6 @@ const CoursePlayer = () => {
           </div>
         </div>
 
-        {/* Module List */}
         <div className="modules-list">
           {course.modules.map((module, moduleIndex) => (
             <div key={module._id} className="module-item">
@@ -193,16 +182,13 @@ const CoursePlayer = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="course-content">
-        {/* Video/Content Area */}
         <div className="content-area">
           <div className="content-header">
             <h1>{currentLessonObj.title}</h1>
             <span className="lesson-type">{currentLessonObj.contentType}</span>
           </div>
 
-          {/* Content Display */}
           <div className="content-display">
             {currentLessonObj.contentType === 'video' ? (
               <div className="video-container">
@@ -238,7 +224,6 @@ const CoursePlayer = () => {
             )}
           </div>
 
-          {/* Lesson Description */}
           {currentLessonObj.description && (
             <div className="lesson-description">
               <h3>About this lesson</h3>
@@ -246,7 +231,6 @@ const CoursePlayer = () => {
             </div>
           )}
 
-          {/* Navigation Controls */}
           <div className="lesson-controls">
             <button
               onClick={goToPrevLesson}
