@@ -20,8 +20,8 @@ import NotFound from './pages/NotFound';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="App">
           <Navbar />
           <Routes>
@@ -69,7 +69,7 @@ function App() {
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<Navigate to="/404" replace />} />
           </Routes>
-          
+
           <ToastContainer
             position="top-right"
             autoClose={3000}
@@ -82,8 +82,8 @@ function App() {
             pauseOnHover
           />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
