@@ -5,18 +5,31 @@ const Progress = require('../models/Progress');
 exports.getAllCourses = async (req, res, next) => {
   try {
     const { category, level, status, search } = req.query;
+<<<<<<< HEAD
 
     let query = {};
 
     if (category) query.category = category;
     if (level) query.level = level;
 
+=======
+    
+    let query = {};
+    
+    if (category) query.category = category;
+    if (level) query.level = level;
+    
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     if (req.user && (req.user.role === 'teacher' || req.user.role === 'admin')) {
       if (status) query.status = status;
     } else {
       query.status = 'published';
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -130,6 +143,7 @@ exports.deleteCourse = async (req, res, next) => {
       });
     }
 
+<<<<<<< HEAD
     // Remove course from instructor's createdCourses
     await User.findByIdAndUpdate(course.instructor, {
       $pull: { createdCourses: course._id }
@@ -144,6 +158,8 @@ exports.deleteCourse = async (req, res, next) => {
     // Remove all progress records for this course
     await Progress.deleteMany({ course: course._id });
 
+=======
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     await course.deleteOne();
 
     res.status(200).json({
@@ -173,7 +189,11 @@ exports.enrollCourse = async (req, res, next) => {
       });
     }
 
+<<<<<<< HEAD
     if (course.enrolledStudents.some(id => id.toString() === req.user.id)) {
+=======
+    if (course.enrolledStudents.includes(req.user.id)) {
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
       return res.status(400).json({
         success: false,
         message: 'You are already enrolled in this course'
@@ -225,6 +245,7 @@ exports.getEnrolledCourses = async (req, res, next) => {
     });
 
     const coursesWithProgress = await Promise.all(
+<<<<<<< HEAD
       user.enrolledCourses
         .filter(course => course !== null) // Handle cases where a course might have been deleted
         .map(async (course) => {
@@ -238,6 +259,19 @@ exports.getEnrolledCourses = async (req, res, next) => {
             progress: progress ? progress.progressPercentage : 0
           };
         })
+=======
+      user.enrolledCourses.map(async (course) => {
+        const progress = await Progress.findOne({
+          student: req.user.id,
+          course: course._id
+        });
+
+        return {
+          ...course.toObject(),
+          progress: progress ? progress.progressPercentage : 0
+        };
+      })
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     );
 
     res.status(200).json({

@@ -158,6 +158,7 @@ const StudentDashboard = () => {
       </div>
 
       <div className="container">
+<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with Theme Switcher */}
         <div className="dashboard-header">
           <div className="header-content">
@@ -213,6 +214,94 @@ const StudentDashboard = () => {
             </div>
           </div>
         </div>
+=======
+        <div className="dashboard-header">
+          <h1>Welcome back, {user.name}!</h1>
+          <p>Continue your learning journey</p>
+        </div>
+
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon">📚</div>
+            <div className="stat-info">
+              <h3>{enrolledCourses.length}</h3>
+              <p>Enrolled Courses</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">✅</div>
+            <div className="stat-info">
+              <h3>{progress.filter(p => p.progressPercentage === 100).length}</h3>
+              <p>Completed</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">📊</div>
+            <div className="stat-info">
+              <h3>
+                {progress.length > 0
+                  ? Math.round(progress.reduce((sum, p) => sum + p.progressPercentage, 0) / progress.length)
+                  : 0}%
+              </h3>
+              <p>Average Progress</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">🏆</div>
+            <div className="stat-info">
+              <h3>{progress.filter(p => p.certificateIssued).length}</h3>
+              <p>Certificates</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-header">
+            <h2>My Courses</h2>
+            <Link to="/courses" className="btn btn-secondary">
+              Browse More
+            </Link>
+          </div>
+
+          {enrolledCourses.length === 0 ? (
+            <div className="empty-state">
+              <p>You haven't enrolled in any courses yet.</p>
+              <Link to="/courses" className="btn btn-primary">
+                Explore Courses
+              </Link>
+            </div>
+          ) : (
+            <div className="courses-grid">
+              {enrolledCourses.map((course) => {
+                const courseProgress = progress.find(p => p.course?._id === course._id);
+                return (
+                  <div key={course._id} className="course-card">
+                    <div className="course-thumbnail">
+                      <img
+                        src={course.thumbnail || 'https://via.placeholder.com/400x250'}
+                        alt={course.title}
+                      />
+                    </div>
+                    <div className="course-content">
+                      <h3>{course.title}</h3>
+                      <p className="course-instructor">By {course.instructor?.name}</p>
+                      
+                      <div className="progress-section">
+                        <div className="progress-header">
+                          <span>Progress</span>
+                          <span>{courseProgress?.progressPercentage || 0}%</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div 
+                            className="progress-fill"
+                            style={{ width: `${courseProgress?.progressPercentage || 0}%` }}
+                          />
+                        </div>
+                      </div>
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 
         {/* FEATURE 3: Quick Stats Cards with Animations */}
         <div className="stats-grid">

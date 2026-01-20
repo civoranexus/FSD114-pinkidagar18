@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedTimeRange, setSelectedTimeRange] = useState('month');
   const [systemHealth, setSystemHealth] = useState({
@@ -38,6 +39,9 @@ const AdminDashboard = () => {
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+=======
+  const [activeTab, setActiveTab] = useState('courses');
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 
   useEffect(() => {
     fetchDashboardData();
@@ -52,6 +56,7 @@ const AdminDashboard = () => {
       
       setCourses(coursesRes.data.data);
       
+<<<<<<< HEAD
       // Calculate stats
       const totalCourses = coursesRes.data.data.length;
       const totalStudents = coursesRes.data.data.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
@@ -67,6 +72,13 @@ const AdminDashboard = () => {
         activeUsers: 892,
         platformGrowth: 24,
         avgCourseRating: avgRating.toFixed(1)
+=======
+      setStats({
+        totalUsers: 0,
+        totalCourses: coursesRes.data.data.length,
+        totalStudents: 0,
+        totalTeachers: 0
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
       });
 
       // Mock users data
@@ -186,7 +198,10 @@ const AdminDashboard = () => {
       </div>
 
       <div className="container">
+<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with System Status */}
+=======
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="dashboard-header">
           <div className="header-content">
             <div className="welcome-section">
@@ -222,7 +237,10 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* FEATURE 2: Advanced Stats Grid */}
+=======
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="stats-grid">
           <div className="stat-card stat-card-blue slide-in" style={{ animationDelay: '0.1s' }}>
             <div className="stat-icon floating">👥</div>
@@ -301,6 +319,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* FEATURE 3: Tabbed Navigation */}
         <div className="dashboard-tabs">
           <button 
@@ -310,6 +329,10 @@ const AdminDashboard = () => {
             📊 Overview
           </button>
           <button 
+=======
+        <div className="tabs">
+          <button
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
             className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
@@ -341,6 +364,7 @@ const AdminDashboard = () => {
           </button>
         </div>
 
+<<<<<<< HEAD
         {/* FEATURE 4-10: Advanced Charts & Analytics */}
         {activeTab === 'overview' && (
           <>
@@ -372,6 +396,17 @@ const AdminDashboard = () => {
                     <Area type="monotone" dataKey="active" stroke="#10B981" fillOpacity={1} fill="url(#colorActive)" name="Active Users" />
                   </AreaChart>
                 </ResponsiveContainer>
+=======
+        <div className="tab-content">
+          {activeTab === 'users' && (
+            <div className="section">
+              <h2>Users Management</h2>
+              <p className="section-description">
+                Manage user accounts, roles, and permissions. (Admin API endpoints to be implemented)
+              </p>
+              <div className="placeholder-content">
+                <p>User management features coming soon...</p>
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
               </div>
 
               {/* User Distribution */}

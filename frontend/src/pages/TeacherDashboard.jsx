@@ -257,7 +257,10 @@ const TeacherDashboard = () => {
       </div>
 
       <div className="container">
+<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with Quick Actions */}
+=======
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="dashboard-header">
           <div className="header-content">
             <div className="welcome-section">
@@ -289,6 +292,7 @@ const TeacherDashboard = () => {
               </button>
             </div>
           </div>
+<<<<<<< HEAD
         </div>
 
         {/* FEATURE 2: Advanced Stats Cards */}
@@ -556,6 +560,19 @@ const TeacherDashboard = () => {
                   />
                 </LineChart>
               </ResponsiveContainer>
+=======
+          <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
+            + Create New Course
+          </button>
+        </div>
+
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon">📚</div>
+            <div className="stat-info">
+              <h3>{stats.totalCourses}</h3>
+              <p>Total Courses</p>
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
             </div>
           </div>
         )}
@@ -754,6 +771,7 @@ const TeacherDashboard = () => {
         )}
       </div>
 
+<<<<<<< HEAD
       {/* Create Course Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -942,6 +960,87 @@ const TeacherDashboard = () => {
               </div>
             </form>
           </div>
+=======
+          <div className="stat-card">
+            <div className="stat-icon">⭐</div>
+            <div className="stat-info">
+              <h3>{stats.averageRating}</h3>
+              <p>Avg Rating</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="section">
+          <h2>My Courses</h2>
+
+          {courses.length === 0 ? (
+            <div className="empty-state">
+              <p>You haven't created any courses yet.</p>
+              <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
+                Create Your First Course
+              </button>
+            </div>
+          ) : (
+            <div className="courses-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Status</th>
+                    <th>Students</th>
+                    <th>Rating</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courses.map((course) => (
+                    <tr key={course._id}>
+                      <td>
+                        <div className="course-info">
+                          <strong>{course.title}</strong>
+                          <span className="course-category">{course.category}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-badge status-${course.status}`}>
+                          {course.status}
+                        </span>
+                      </td>
+                      <td>{course.enrolledStudents?.length || 0}</td>
+                      <td>
+                        {course.rating?.average > 0 
+                          ? `⭐ ${course.rating.average.toFixed(1)}` 
+                          : 'No ratings'}
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <Link 
+                            to={`/courses/${course._id}`}
+                            className="btn btn-sm btn-secondary"
+                          >
+                            View
+                          </Link>
+                          <button
+                            onClick={() => toast.info('Edit feature coming soon!')}
+                            className="btn btn-sm btn-primary"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCourse(course._id)}
+                            className="btn btn-sm btn-danger"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+>>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         </div>
       )}
 

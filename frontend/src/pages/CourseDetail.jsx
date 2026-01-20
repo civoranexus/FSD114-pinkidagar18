@@ -23,7 +23,6 @@ const CourseDetail = () => {
       const { data } = await api.get(`/courses/${id}`);
       setCourse(data.data);
       
-      // Check if user is enrolled
       if (user && data.data.enrolledStudents?.includes(user.id)) {
         setIsEnrolled(true);
       }
@@ -74,7 +73,6 @@ const CourseDetail = () => {
 
   return (
     <div className="course-detail-page">
-      {/* Hero Section */}
       <div className="course-hero">
         <div className="container">
           <div className="course-hero-content">
@@ -125,10 +123,8 @@ const CourseDetail = () => {
         </div>
       </div>
 
-      {/* Course Content */}
       <div className="container">
         <div className="course-sections">
-          {/* Learning Outcomes */}
           {course.learningOutcomes && course.learningOutcomes.length > 0 && (
             <div className="course-section">
               <h2>What You'll Learn</h2>
@@ -140,7 +136,6 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {/* Requirements */}
           {course.requirements && course.requirements.length > 0 && (
             <div className="course-section">
               <h2>Requirements</h2>
@@ -152,7 +147,6 @@ const CourseDetail = () => {
             </div>
           )}
 
-          {/* Course Modules */}
           <div className="course-section">
             <h2>Course Content</h2>
             <div className="modules-list">

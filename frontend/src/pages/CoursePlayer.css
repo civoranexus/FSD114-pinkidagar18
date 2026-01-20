@@ -134,7 +134,6 @@
   gap: 1rem;
 }
 
-/* Main Content Area */
 .course-content {
   overflow-y: auto;
 }
@@ -176,7 +175,7 @@
 
 .video-container {
   position: relative;
-  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
   background-color: black;
@@ -241,7 +240,6 @@
   cursor: not-allowed;
 }
 
-/* Responsive Design */
 @media (max-width: 1024px) {
   .course-player {
     grid-template-columns: 300px 1fr;
