@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-﻿{
-=======
 {
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
   "name": "eduvillage-backend",
   "version": "1.0.0",
   "description": "EduVillage Online Learning Platform - Backend API",
@@ -12,15 +8,11 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-<<<<<<< HEAD
-  "keywords": ["e-learning", "education", "civora-nexus"],
-=======
   "keywords": [
     "e-learning",
     "education",
     "civora-nexus"
   ],
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
   "author": "CivoraX Intern",
   "license": "MIT",
   "dependencies": {
@@ -38,8 +30,4 @@
   "devDependencies": {
     "nodemon": "^3.0.2"
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc

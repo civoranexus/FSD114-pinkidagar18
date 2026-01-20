@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
-import { 
+import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import './AdminDashboard.css';
 
@@ -24,7 +24,6 @@ const AdminDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedTimeRange, setSelectedTimeRange] = useState('month');
   const [systemHealth, setSystemHealth] = useState({
@@ -39,9 +38,6 @@ const AdminDashboard = () => {
   const [theme, setTheme] = useState('light');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-=======
-  const [activeTab, setActiveTab] = useState('courses');
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 
   useEffect(() => {
     fetchDashboardData();
@@ -53,10 +49,9 @@ const AdminDashboard = () => {
       const [coursesRes] = await Promise.all([
         api.get('/courses')
       ]);
-      
+
       setCourses(coursesRes.data.data);
-      
-<<<<<<< HEAD
+
       // Calculate stats
       const totalCourses = coursesRes.data.data.length;
       const totalStudents = coursesRes.data.data.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
@@ -72,13 +67,6 @@ const AdminDashboard = () => {
         activeUsers: 892,
         platformGrowth: 24,
         avgCourseRating: avgRating.toFixed(1)
-=======
-      setStats({
-        totalUsers: 0,
-        totalCourses: coursesRes.data.data.length,
-        totalStudents: 0,
-        totalTeachers: 0
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
       });
 
       // Mock users data
@@ -119,8 +107,8 @@ const AdminDashboard = () => {
   };
 
   const handleUserStatusToggle = (userId) => {
-    setUsers(users.map(u => 
-      u.id === userId 
+    setUsers(users.map(u =>
+      u.id === userId
         ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' }
         : u
     ));
@@ -128,8 +116,8 @@ const AdminDashboard = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = filterRole === 'all' || user.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -198,10 +186,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="container">
-<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with System Status */}
-=======
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="dashboard-header">
           <div className="header-content">
             <div className="welcome-section">
@@ -219,12 +204,12 @@ const AdminDashboard = () => {
                 <div className="health-dot pulse"></div>
                 <span>All Systems Operational</span>
               </div>
-              
+
               {/* Theme Toggle */}
               <button className="theme-toggle" onClick={toggleTheme}>
                 {theme === 'light' ? '🌙' : '☀️'}
               </button>
-              
+
               {/* Quick Actions */}
               <button className="action-btn" title="System Settings">
                 ⚙️
@@ -237,10 +222,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* FEATURE 2: Advanced Stats Grid */}
-=======
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="stats-grid">
           <div className="stat-card stat-card-blue slide-in" style={{ animationDelay: '0.1s' }}>
             <div className="stat-icon floating">👥</div>
@@ -319,44 +301,39 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-<<<<<<< HEAD
         {/* FEATURE 3: Tabbed Navigation */}
         <div className="dashboard-tabs">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             📊 Overview
           </button>
-          <button 
-=======
-        <div className="tabs">
           <button
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
             className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
             👥 User Management
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'courses' ? 'active' : ''}`}
             onClick={() => setActiveTab('courses')}
           >
             📚 Course Management
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
             📈 Analytics
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'revenue' ? 'active' : ''}`}
             onClick={() => setActiveTab('revenue')}
           >
             💰 Revenue
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'system' ? 'active' : ''}`}
             onClick={() => setActiveTab('system')}
           >
@@ -364,7 +341,6 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-<<<<<<< HEAD
         {/* FEATURE 4-10: Advanced Charts & Analytics */}
         {activeTab === 'overview' && (
           <>
@@ -379,12 +355,12 @@ const AdminDashboard = () => {
                   <AreaChart data={userGrowthData}>
                     <defs>
                       <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -396,17 +372,6 @@ const AdminDashboard = () => {
                     <Area type="monotone" dataKey="active" stroke="#10B981" fillOpacity={1} fill="url(#colorActive)" name="Active Users" />
                   </AreaChart>
                 </ResponsiveContainer>
-=======
-        <div className="tab-content">
-          {activeTab === 'users' && (
-            <div className="section">
-              <h2>Users Management</h2>
-              <p className="section-description">
-                Manage user accounts, roles, and permissions. (Admin API endpoints to be implemented)
-              </p>
-              <div className="placeholder-content">
-                <p>User management features coming soon...</p>
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
               </div>
 
               {/* User Distribution */}
@@ -489,7 +454,7 @@ const AdminDashboard = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <select 
+                <select
                   className="filter-select"
                   value={filterRole}
                   onChange={(e) => setFilterRole(e.target.value)}
@@ -543,19 +508,19 @@ const AdminDashboard = () => {
                       <td>{user.courses}</td>
                       <td>
                         <div className="action-buttons">
-                          <button 
+                          <button
                             className="btn btn-sm btn-secondary"
                             onClick={() => setSelectedUser(user)}
                           >
                             👁️ View
                           </button>
-                          <button 
+                          <button
                             className="btn btn-sm btn-primary"
                             onClick={() => handleUserStatusToggle(user.id)}
                           >
                             {user.status === 'active' ? '🔒 Suspend' : '✅ Activate'}
                           </button>
-                          <button 
+                          <button
                             className="btn btn-sm btn-danger"
                             onClick={() => handleDeleteUser(user.id)}
                           >
@@ -731,12 +696,12 @@ const AdminDashboard = () => {
                   <PolarGrid stroke="#e5e7eb" />
                   <PolarAngleAxis dataKey="metric" stroke="#6B7280" />
                   <PolarRadiusAxis stroke="#6B7280" />
-                  <Radar 
-                    name="Score" 
-                    dataKey="score" 
-                    stroke="#3B82F6" 
-                    fill="#3B82F6" 
-                    fillOpacity={0.6} 
+                  <Radar
+                    name="Score"
+                    dataKey="score"
+                    stroke="#3B82F6"
+                    fill="#3B82F6"
+                    fillOpacity={0.6}
                   />
                   <Tooltip />
                 </RadarChart>

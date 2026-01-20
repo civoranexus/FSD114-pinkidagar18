@@ -1,46 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-<<<<<<< HEAD
-=======
 import './Home.css';
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 
 const Home = () => {
   const { isAuthenticated, user } = useAuth();
 
   return (
-<<<<<<< HEAD
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>Welcome to EduVillage</h1>
-      <p>Your Gateway to Quality Online Education</p>
-      
-      {!isAuthenticated ? (
-        <div style={{ marginTop: '2rem' }}>
-          <Link to="/register" className="btn btn-primary" style={{ marginRight: '1rem' }}>
-            Get Started Free
-          </Link>
-          <Link to="/courses" className="btn btn-secondary">
-            Browse Courses
-          </Link>
-        </div>
-      ) : (
-        <div style={{ marginTop: '2rem' }}>
-          <Link 
-            to={user?.role === 'student' ? '/student/dashboard' : 
-                user?.role === 'teacher' ? '/teacher/dashboard' : 
-                '/admin/dashboard'} 
-            className="btn btn-primary"
-            style={{ marginRight: '1rem' }}
-          >
-            Go to Dashboard
-          </Link>
-          <Link to="/courses" className="btn btn-secondary">
-            Browse Courses
-          </Link>
-        </div>
-      )}
-=======
     <div className="home-page">
       {/* Hero Section */}
       <section className="hero-section">
@@ -54,7 +20,7 @@ const Home = () => {
               Learn from expert instructors, track your progress, and achieve your educational goals
               with our comprehensive online learning platform.
             </p>
-            
+
             {!isAuthenticated ? (
               <div className="hero-actions">
                 <Link to="/register" className="btn btn-primary btn-large">
@@ -66,10 +32,10 @@ const Home = () => {
               </div>
             ) : (
               <div className="hero-actions">
-                <Link 
-                  to={user?.role === 'student' ? '/student/dashboard' : 
-                      user?.role === 'teacher' ? '/teacher/dashboard' : 
-                      '/admin/dashboard'} 
+                <Link
+                  to={user?.role === 'student' ? '/student/dashboard' :
+                    user?.role === 'teacher' ? '/teacher/dashboard' :
+                      '/admin/dashboard'}
                   className="btn btn-primary btn-large"
                 >
                   Go to Dashboard
@@ -87,7 +53,7 @@ const Home = () => {
       <section className="features-section">
         <div className="container">
           <h2 className="section-title">Why Choose EduVillage?</h2>
-          
+
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">📚</div>
@@ -148,7 +114,6 @@ const Home = () => {
           <p>Connecting Citizens Through Intelligent Innovation</p>
         </div>
       </footer>
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     </div>
   );
 };

@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
-import { 
+import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import './TeacherDashboard.css';
 
@@ -88,7 +88,7 @@ const TeacherDashboard = () => {
 
   const handleCreateCourse = async (e) => {
     e.preventDefault();
-    
+
     if (!newCourse.title || !newCourse.description) {
       toast.error('Please fill in all required fields');
       return;
@@ -99,7 +99,7 @@ const TeacherDashboard = () => {
         ...newCourse,
         status: 'published'
       });
-      
+
       toast.success('🎉 Course created successfully!');
       setShowModal(false);
       setNewCourse({
@@ -187,7 +187,7 @@ const TeacherDashboard = () => {
       toast.error('Please enter announcement content');
       return;
     }
-    
+
     toast.success('📢 Announcement sent to all students!');
     setShowAnnouncementModal(false);
     setNewAnnouncement('');
@@ -257,15 +257,12 @@ const TeacherDashboard = () => {
       </div>
 
       <div className="container">
-<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with Quick Actions */}
-=======
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         <div className="dashboard-header">
           <div className="header-content">
             <div className="welcome-section">
               <h1>
-                Welcome, <span className="user-name animated-gradient">Prof. {user.name}</span>! 
+                Welcome, <span className="user-name animated-gradient">Prof. {user.name}</span>!
                 <span className="wave-emoji">👋</span>
               </h1>
               <p className="header-subtitle">
@@ -277,22 +274,21 @@ const TeacherDashboard = () => {
               <button className="theme-toggle" onClick={toggleTheme} title="Toggle Theme">
                 {theme === 'light' ? '🌙' : '☀️'}
               </button>
-              
+
               {/* Quick Actions */}
-              <button 
+              <button
                 className="action-btn announcement-btn"
                 onClick={() => setShowAnnouncementModal(true)}
                 title="Send Announcement"
               >
                 📢
               </button>
-              
+
               <button className="btn btn-primary pulse-animation" onClick={() => setShowModal(true)}>
                 ➕ Create New Course
               </button>
             </div>
           </div>
-<<<<<<< HEAD
         </div>
 
         {/* FEATURE 2: Advanced Stats Cards */}
@@ -376,31 +372,31 @@ const TeacherDashboard = () => {
 
         {/* FEATURE 3: Tabbed Navigation */}
         <div className="dashboard-tabs">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             📊 Overview
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'courses' ? 'active' : ''}`}
             onClick={() => setActiveTab('courses')}
           >
             📚 My Courses
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
             📈 Analytics
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'students' ? 'active' : ''}`}
             onClick={() => setActiveTab('students')}
           >
             👥 Students
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'revenue' ? 'active' : ''}`}
             onClick={() => setActiveTab('revenue')}
           >
@@ -422,18 +418,18 @@ const TeacherDashboard = () => {
                   <AreaChart data={enrollmentTrendData}>
                     <defs>
                       <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
                     <YAxis stroke="#6B7280" fontSize={12} />
                     <Tooltip />
-                    <Area 
-                      type="monotone" 
-                      dataKey="students" 
-                      stroke="#3B82F6" 
+                    <Area
+                      type="monotone"
+                      dataKey="students"
+                      stroke="#3B82F6"
                       fillOpacity={1}
                       fill="url(#colorStudents)"
                     />
@@ -550,29 +546,16 @@ const TeacherDashboard = () => {
                   <XAxis dataKey="month" stroke="#6B7280" fontSize={12} />
                   <YAxis stroke="#6B7280" fontSize={12} />
                   <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#10B981" 
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#10B981"
                     strokeWidth={3}
                     dot={{ fill: '#10B981', r: 6 }}
                     activeDot={{ r: 8 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
-=======
-          <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
-            + Create New Course
-          </button>
-        </div>
-
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">📚</div>
-            <div className="stat-info">
-              <h3>{stats.totalCourses}</h3>
-              <p>Total Courses</p>
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
             </div>
           </div>
         )}
@@ -701,7 +684,7 @@ const TeacherDashboard = () => {
                         </td>
                         <td>
                           <div className="action-buttons">
-                            <Link 
+                            <Link
                               to={`/courses/${course._id}`}
                               className="btn btn-sm btn-secondary"
                               title="View Course"
@@ -771,7 +754,6 @@ const TeacherDashboard = () => {
         )}
       </div>
 
-<<<<<<< HEAD
       {/* Create Course Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -960,87 +942,6 @@ const TeacherDashboard = () => {
               </div>
             </form>
           </div>
-=======
-          <div className="stat-card">
-            <div className="stat-icon">⭐</div>
-            <div className="stat-info">
-              <h3>{stats.averageRating}</h3>
-              <p>Avg Rating</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="section">
-          <h2>My Courses</h2>
-
-          {courses.length === 0 ? (
-            <div className="empty-state">
-              <p>You haven't created any courses yet.</p>
-              <button className="btn btn-primary" onClick={() => toast.info('Create course feature coming soon!')}>
-                Create Your First Course
-              </button>
-            </div>
-          ) : (
-            <div className="courses-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Course</th>
-                    <th>Status</th>
-                    <th>Students</th>
-                    <th>Rating</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.map((course) => (
-                    <tr key={course._id}>
-                      <td>
-                        <div className="course-info">
-                          <strong>{course.title}</strong>
-                          <span className="course-category">{course.category}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`status-badge status-${course.status}`}>
-                          {course.status}
-                        </span>
-                      </td>
-                      <td>{course.enrolledStudents?.length || 0}</td>
-                      <td>
-                        {course.rating?.average > 0 
-                          ? `⭐ ${course.rating.average.toFixed(1)}` 
-                          : 'No ratings'}
-                      </td>
-                      <td>
-                        <div className="action-buttons">
-                          <Link 
-                            to={`/courses/${course._id}`}
-                            className="btn btn-sm btn-secondary"
-                          >
-                            View
-                          </Link>
-                          <button
-                            onClick={() => toast.info('Edit feature coming soon!')}
-                            className="btn btn-sm btn-primary"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCourse(course._id)}
-                            className="btn btn-sm btn-danger"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
         </div>
       )}
 
@@ -1054,7 +955,7 @@ const TeacherDashboard = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="form-group">
               <label>Announcement Message</label>
               <textarea

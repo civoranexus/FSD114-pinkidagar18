@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-
-const CourseCatalog = () => {
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Course Catalog</h1>
-      <p>Courses will be displayed here.</p>
-=======
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
@@ -132,13 +123,10 @@ const CourseCatalog = () => {
           </div>
         )}
       </div>
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
     </div>
   );
 };
 
-<<<<<<< HEAD
-=======
 const CourseCard = ({ course }) => {
   return (
     <Link to={`/courses/${course._id}`} className="course-card">
@@ -179,5 +167,4 @@ const CourseCard = ({ course }) => {
   );
 };
 
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 export default CourseCatalog;

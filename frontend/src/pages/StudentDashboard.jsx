@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
-import { 
+import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import './StudentDashboard.css';
 
@@ -35,7 +35,7 @@ const StudentDashboard = () => {
         api.get('/courses/student/enrolled'),
         api.get('/progress/my-progress')
       ]);
-      
+
       setEnrolledCourses(coursesRes.data.data);
       setProgress(progressRes.data.data);
     } catch (error) {
@@ -143,7 +143,7 @@ const StudentDashboard = () => {
   };
 
   const markNotificationRead = (id) => {
-    setNotifications(notifications.map(n => 
+    setNotifications(notifications.map(n =>
       n.id === id ? { ...n, read: true } : n
     ));
   };
@@ -158,13 +158,12 @@ const StudentDashboard = () => {
       </div>
 
       <div className="container">
-<<<<<<< HEAD
         {/* FEATURE 1: Enhanced Header with Theme Switcher */}
         <div className="dashboard-header">
           <div className="header-content">
             <div className="welcome-section">
               <h1>
-                Welcome back, <span className="user-name animated-gradient">{user.name}</span>! 
+                Welcome back, <span className="user-name animated-gradient">{user.name}</span>!
                 <span className="wave-emoji">👋</span>
               </h1>
               <p className="header-subtitle">
@@ -176,10 +175,10 @@ const StudentDashboard = () => {
               <button className="theme-toggle" onClick={toggleTheme}>
                 {theme === 'light' ? '🌙' : '☀️'}
               </button>
-              
+
               {/* FEATURE 2: Notification Bell */}
               <div className="notifications-wrapper">
-                <button 
+                <button
                   className="notification-bell"
                   onClick={() => setShowNotifications(!showNotifications)}
                 >
@@ -190,13 +189,13 @@ const StudentDashboard = () => {
                     </span>
                   )}
                 </button>
-                
+
                 {showNotifications && (
                   <div className="notifications-dropdown">
                     <h3>Notifications</h3>
                     {notifications.map(notif => (
-                      <div 
-                        key={notif.id} 
+                      <div
+                        key={notif.id}
                         className={`notification-item ${notif.type} ${notif.read ? 'read' : ''}`}
                         onClick={() => markNotificationRead(notif.id)}
                       >
@@ -207,101 +206,13 @@ const StudentDashboard = () => {
                   </div>
                 )}
               </div>
-              
+
               <Link to="/courses" className="btn btn-primary pulse-animation">
                 🚀 Explore Courses
               </Link>
             </div>
           </div>
         </div>
-=======
-        <div className="dashboard-header">
-          <h1>Welcome back, {user.name}!</h1>
-          <p>Continue your learning journey</p>
-        </div>
-
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">📚</div>
-            <div className="stat-info">
-              <h3>{enrolledCourses.length}</h3>
-              <p>Enrolled Courses</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">✅</div>
-            <div className="stat-info">
-              <h3>{progress.filter(p => p.progressPercentage === 100).length}</h3>
-              <p>Completed</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <div className="stat-info">
-              <h3>
-                {progress.length > 0
-                  ? Math.round(progress.reduce((sum, p) => sum + p.progressPercentage, 0) / progress.length)
-                  : 0}%
-              </h3>
-              <p>Average Progress</p>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">🏆</div>
-            <div className="stat-info">
-              <h3>{progress.filter(p => p.certificateIssued).length}</h3>
-              <p>Certificates</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-header">
-            <h2>My Courses</h2>
-            <Link to="/courses" className="btn btn-secondary">
-              Browse More
-            </Link>
-          </div>
-
-          {enrolledCourses.length === 0 ? (
-            <div className="empty-state">
-              <p>You haven't enrolled in any courses yet.</p>
-              <Link to="/courses" className="btn btn-primary">
-                Explore Courses
-              </Link>
-            </div>
-          ) : (
-            <div className="courses-grid">
-              {enrolledCourses.map((course) => {
-                const courseProgress = progress.find(p => p.course?._id === course._id);
-                return (
-                  <div key={course._id} className="course-card">
-                    <div className="course-thumbnail">
-                      <img
-                        src={course.thumbnail || 'https://via.placeholder.com/400x250'}
-                        alt={course.title}
-                      />
-                    </div>
-                    <div className="course-content">
-                      <h3>{course.title}</h3>
-                      <p className="course-instructor">By {course.instructor?.name}</p>
-                      
-                      <div className="progress-section">
-                        <div className="progress-header">
-                          <span>Progress</span>
-                          <span>{courseProgress?.progressPercentage || 0}%</span>
-                        </div>
-                        <div className="progress-bar">
-                          <div 
-                            className="progress-fill"
-                            style={{ width: `${courseProgress?.progressPercentage || 0}%` }}
-                          />
-                        </div>
-                      </div>
->>>>>>> 2066d84652fabaaa540b5607d7cc3bf04bd6afbc
 
         {/* FEATURE 3: Quick Stats Cards with Animations */}
         <div className="stats-grid">
@@ -387,31 +298,31 @@ const StudentDashboard = () => {
 
         {/* FEATURE 4: Tabbed Navigation */}
         <div className="dashboard-tabs">
-          <button 
+          <button
             className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             📊 Overview
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'courses' ? 'active' : ''}`}
             onClick={() => setActiveTab('courses')}
           >
             📚 My Courses
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'achievements' ? 'active' : ''}`}
             onClick={() => setActiveTab('achievements')}
           >
             🏆 Achievements
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'goals' ? 'active' : ''}`}
             onClick={() => setActiveTab('goals')}
           >
             🎯 Goals
           </button>
-          <button 
+          <button
             className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
@@ -434,13 +345,13 @@ const StudentDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
                     <YAxis stroke="#6B7280" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: '#fff', 
+                    <Tooltip
+                      contentStyle={{
+                        background: '#fff',
                         border: '1px solid #e5e7eb',
                         borderRadius: '8px',
                         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                      }} 
+                      }}
                     />
                     <Legend />
                     <Bar dataKey="progress" fill="#3B82F6" radius={[8, 8, 0, 0]} name="Progress %" />
@@ -493,24 +404,24 @@ const StudentDashboard = () => {
                   <AreaChart data={weeklyActivityData}>
                     <defs>
                       <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="day" stroke="#6B7280" fontSize={12} />
                     <YAxis stroke="#6B7280" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        background: '#fff', 
+                    <Tooltip
+                      contentStyle={{
+                        background: '#fff',
                         border: '1px solid #e5e7eb',
                         borderRadius: '8px'
-                      }} 
+                      }}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="hours" 
-                      stroke="#8B5CF6" 
+                    <Area
+                      type="monotone"
+                      dataKey="hours"
+                      stroke="#8B5CF6"
                       fillOpacity={1}
                       fill="url(#colorHours)"
                     />
@@ -532,12 +443,12 @@ const StudentDashboard = () => {
                     <PolarGrid stroke="#e5e7eb" />
                     <PolarAngleAxis dataKey="skill" stroke="#6B7280" />
                     <PolarRadiusAxis stroke="#6B7280" />
-                    <Radar 
-                      name="Skill Level" 
-                      dataKey="level" 
-                      stroke="#3B82F6" 
-                      fill="#3B82F6" 
-                      fillOpacity={0.6} 
+                    <Radar
+                      name="Skill Level"
+                      dataKey="level"
+                      stroke="#3B82F6"
+                      fill="#3B82F6"
+                      fillOpacity={0.6}
                     />
                     <Tooltip />
                   </RadarChart>
@@ -582,19 +493,19 @@ const StudentDashboard = () => {
                     <YAxis stroke="#6B7280" fontSize={12} />
                     <Tooltip />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="courses" 
-                      stroke="#3B82F6" 
+                    <Line
+                      type="monotone"
+                      dataKey="courses"
+                      stroke="#3B82F6"
                       strokeWidth={3}
                       dot={{ fill: '#3B82F6', r: 6 }}
                       activeDot={{ r: 8 }}
                       name="Courses"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="hours" 
-                      stroke="#10B981" 
+                    <Line
+                      type="monotone"
+                      dataKey="hours"
+                      stroke="#10B981"
                       strokeWidth={3}
                       dot={{ fill: '#10B981', r: 6 }}
                       name="Study Hours"
@@ -615,8 +526,8 @@ const StudentDashboard = () => {
             </div>
             <div className="achievements-grid">
               {achievements.map(achievement => (
-                <div 
-                  key={achievement.id} 
+                <div
+                  key={achievement.id}
                   className={`achievement-card ${achievement.earned ? 'earned' : 'locked'}`}
                 >
                   <div className="achievement-icon">{achievement.icon}</div>
@@ -642,7 +553,7 @@ const StudentDashboard = () => {
                   <div className="goal-info">
                     <h3>{goal.goal}</h3>
                     <div className="goal-progress-bar">
-                      <div 
+                      <div
                         className="goal-progress-fill"
                         style={{ width: `${goal.progress}%` }}
                       >
@@ -668,19 +579,19 @@ const StudentDashboard = () => {
             <div className="section-header">
               <h2>📊 Detailed Analytics</h2>
               <div className="time-range-selector">
-                <button 
+                <button
                   className={selectedTimeRange === 'week' ? 'active' : ''}
                   onClick={() => setSelectedTimeRange('week')}
                 >
                   Week
                 </button>
-                <button 
+                <button
                   className={selectedTimeRange === 'month' ? 'active' : ''}
                   onClick={() => setSelectedTimeRange('month')}
                 >
                   Month
                 </button>
-                <button 
+                <button
                   className={selectedTimeRange === 'year' ? 'active' : ''}
                   onClick={() => setSelectedTimeRange('year')}
                 >
@@ -752,7 +663,7 @@ const StudentDashboard = () => {
                 {enrolledCourses.map((course) => {
                   const courseProgress = progress.find(p => p.course?._id === course._id);
                   const progressPercent = courseProgress?.progressPercentage || 0;
-                  
+
                   return (
                     <div key={course._id} className="course-card hover-lift">
                       <div className="course-thumbnail">
@@ -767,7 +678,7 @@ const StudentDashboard = () => {
                           </div>
                         )}
                         <div className="course-overlay">
-                          <Link 
+                          <Link
                             to={`/student/course/${course._id}`}
                             className="btn btn-primary"
                           >
@@ -781,14 +692,14 @@ const StudentDashboard = () => {
                           <span className="instructor-icon">👨‍🏫</span>
                           {course.instructor?.name}
                         </p>
-                        
+
                         <div className="progress-section">
                           <div className="progress-header">
                             <span className="progress-label">Progress</span>
                             <span className="progress-percent">{progressPercent}%</span>
                           </div>
                           <div className="progress-bar">
-                            <div 
+                            <div
                               className="progress-fill animated-fill"
                               style={{ width: `${progressPercent}%` }}
                             />
