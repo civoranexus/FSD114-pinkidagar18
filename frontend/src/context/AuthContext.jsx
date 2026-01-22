@@ -1,88 +1,89 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = () => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
       try {
-        const { data } = await api.get('/auth/me');
-        setUser(data.data);
+        setUser(JSON.parse(userData));
+        setIsAuthenticated(true);
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       } catch (error) {
-        localStorage.removeItem('token');
+        console.error('Error parsing user data:', error);
+        logout();
       }
     }
     setLoading(false);
   };
 
-  const login = async (email, password) => {
-    try {
-      const { data } = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', data.data.token);
-      setUser(data.data.user);
-      toast.success('Login successful!');
-      
-      if (data.data.user.role === 'student') {
-        navigate('/student/dashboard');
-      } else if (data.data.user.role === 'teacher') {
-        navigate('/teacher/dashboard');
-      } else if (data.data.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
-      throw error;
-    }
+  const login = (token, userData) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    setIsAuthenticated(true);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
-  const register = async (name, email, password, role = 'student') => {
+  const register = async (name, email, password, role) => {
     try {
       const { data } = await api.post('/auth/register', { name, email, password, role });
-      localStorage.setItem('token', data.data.token);
-      setUser(data.data.user);
-      toast.success('Registration successful!');
-      navigate('/student/dashboard');
+      const { token, user: userData } = data.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      setIsAuthenticated(true);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      return data;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
       throw error;
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
-    toast.info('Logged out successfully');
-    navigate('/login');
+    setIsAuthenticated(false);
+    delete api.defaults.headers.common['Authorization'];
   };
 
   const value = {
     user,
+    isAuthenticated,
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user
+    checkAuth
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
+
+export default AuthContext;

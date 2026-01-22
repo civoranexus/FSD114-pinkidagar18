@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
 import './Auth.css';
 
 const Register = () => {
+  const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -40,7 +42,17 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.role);
+      const { data } = await register(formData.name, formData.email, formData.password, formData.role);
+      toast.success('Registration successful! Welcome to EduVillage. 🚀');
+
+      const { user: userData } = data.data;
+      setTimeout(() => {
+        if (userData.role === 'student') {
+          navigate('/student/dashboard');
+        } else if (userData.role === 'teacher') {
+          navigate('/teacher/dashboard');
+        }
+      }, 500);
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

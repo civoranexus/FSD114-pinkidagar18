@@ -49,13 +49,14 @@ const TeacherDashboard = () => {
   const fetchTeacherData = async () => {
     try {
       const { data } = await api.get('/courses/teacher/my-courses');
-      setCourses(data.data);
+      const coursesData = data?.data || [];
+      setCourses(coursesData);
 
-      const totalCourses = data.data.length;
-      const publishedCourses = data.data.filter(c => c.status === 'published').length;
-      const totalStudents = data.data.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
-      const averageRating = data.data.reduce((sum, c) => sum + (c.rating?.average || 0), 0) / totalCourses || 0;
-      const totalRevenue = data.data.reduce((sum, c) => sum + (c.price * (c.enrolledStudents?.length || 0)), 0);
+      const totalCourses = coursesData.length;
+      const publishedCourses = coursesData.filter(c => c.status === 'published').length;
+      const totalStudents = coursesData.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
+      const averageRating = coursesData.reduce((sum, c) => sum + (c.rating?.average || 0), 0) / totalCourses || 0;
+      const totalRevenue = coursesData.reduce((sum, c) => sum + (c.price * (c.enrolledStudents?.length || 0)), 0);
 
       setStats({
         totalCourses,
@@ -262,7 +263,7 @@ const TeacherDashboard = () => {
           <div className="header-content">
             <div className="welcome-section">
               <h1>
-                Welcome, <span className="user-name animated-gradient">Prof. {user.name}</span>!
+                Welcome, <span className="user-name animated-gradient">Prof. {user?.name || 'Instructor'}</span>!
                 <span className="wave-emoji">👋</span>
               </h1>
               <p className="header-subtitle">

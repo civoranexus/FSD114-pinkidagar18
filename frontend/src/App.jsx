@@ -1,89 +1,77 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/common/Navbar';
-import PrivateRoute from './components/common/PrivateRoute';
-
+import Navbar from './components/common/Navbar';  // ← CORRECT PATH
 import Home from './pages/Home';
+import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Courses from './pages/CourseCatalog';  // ← You have CourseCatalog.jsx
+import CourseDetail from './pages/CourseDetail';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import CourseCatalog from './pages/CourseCatalog';
-import CourseDetail from './pages/CourseDetail';
-import CoursePlayer from './pages/CoursePlayer';
-import NotFound from './pages/NotFound';
+import StudentCourseView from './pages/CoursePlayer';  // ← You have CoursePlayer.jsx
+import ProtectedRoute from './components/ProtectedRoute';  // ← CORRECT PATH
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './App.css';
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+    <AuthProvider>
+      <Router>
         <div className="App">
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/courses" element={<CourseCatalog />} />
+            <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
-
-            <Route
-              path="/student/dashboard"
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/student/dashboard" 
               element={
-                <PrivateRoute role="student">
+                <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
-                </PrivateRoute>
-              }
+                </ProtectedRoute>
+              } 
             />
-            <Route
-              path="/student/course/:id"
+            <Route 
+              path="/student/course/:courseId" 
               element={
-                <PrivateRoute role="student">
-                  <CoursePlayer />
-                </PrivateRoute>
-              }
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentCourseView />
+                </ProtectedRoute>
+              } 
             />
-
-            <Route
-              path="/teacher/dashboard"
+            <Route 
+              path="/teacher/dashboard" 
               element={
-                <PrivateRoute role="teacher">
+                <ProtectedRoute allowedRoles={['teacher']}>
                   <TeacherDashboard />
-                </PrivateRoute>
-              }
+                </ProtectedRoute>
+              } 
             />
-
-            <Route
-              path="/admin/dashboard"
+            <Route 
+              path="/admin/dashboard" 
               element={
-                <PrivateRoute role="admin">
+                <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
-                </PrivateRoute>
-              }
+                </ProtectedRoute>
+              } 
             />
-
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<Navigate to="/404" replace />} />
+            
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={true}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
+          <ToastContainer position="top-right" autoClose={3000} />
         </div>
-      </AuthProvider>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 

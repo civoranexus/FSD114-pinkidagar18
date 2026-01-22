@@ -1,0 +1,143 @@
+.certificate-page {
+  min-height: 100vh;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.certificate {
+  max-width: 900px;
+  margin: 0 auto 2rem;
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.certificate-border {
+  border: 15px solid;
+  border-image: linear-gradient(135deg, #667eea, #764ba2) 1;
+  padding: 3rem;
+}
+
+.certificate-content {
+  text-align: center;
+}
+
+.certificate-logo {
+  font-size: 2.5rem;
+  color: #667eea;
+  margin-bottom: 2rem;
+}
+
+.certificate-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 2rem;
+}
+
+.certificate-text {
+  font-size: 1.2rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.student-name {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 1.5rem 0;
+}
+
+.course-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 1.5rem 0 3rem;
+}
+
+.certificate-details {
+  margin: 3rem 0;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.certificate-details p {
+  font-size: 1.1rem;
+  color: #6b7280;
+  margin: 0.5rem 0;
+}
+
+.signatures {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 4rem;
+}
+
+.signature {
+  text-align: center;
+}
+
+.signature-line {
+  width: 250px;
+  height: 2px;
+  background: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.signature p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0.5rem 0;
+}
+
+.signature-title {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 400 !important;
+}
+
+.certificate-actions {
+  text-align: center;
+}
+
+.btn-download {
+  background: white;
+  color: #667eea;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-download:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.loading,
+.error {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+}
+
+@media print {
+  .certificate-actions {
+    display: none;
+  }
+  
+  .certificate-page {
+    background: white;
+    padding: 0;
+  }
+}

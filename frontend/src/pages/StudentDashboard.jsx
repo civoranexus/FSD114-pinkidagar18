@@ -36,8 +36,8 @@ const StudentDashboard = () => {
         api.get('/progress/my-progress')
       ]);
 
-      setEnrolledCourses(coursesRes.data.data);
-      setProgress(progressRes.data.data);
+      setEnrolledCourses(coursesRes.data?.data || []);
+      setProgress(progressRes.data?.data || []);
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
@@ -163,7 +163,7 @@ const StudentDashboard = () => {
           <div className="header-content">
             <div className="welcome-section">
               <h1>
-                Welcome back, <span className="user-name animated-gradient">{user.name}</span>!
+                Welcome back, <span className="user-name animated-gradient">{user?.name || 'Student'}</span>!
                 <span className="wave-emoji">👋</span>
               </h1>
               <p className="header-subtitle">

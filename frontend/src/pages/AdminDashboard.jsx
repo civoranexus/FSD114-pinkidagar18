@@ -50,13 +50,14 @@ const AdminDashboard = () => {
         api.get('/courses')
       ]);
 
-      setCourses(coursesRes.data.data);
+      const coursesData = coursesRes.data?.data || [];
+      setCourses(coursesData);
 
       // Calculate stats
-      const totalCourses = coursesRes.data.data.length;
-      const totalStudents = coursesRes.data.data.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
-      const totalRevenue = coursesRes.data.data.reduce((sum, c) => sum + (c.price * (c.enrolledStudents?.length || 0)), 0);
-      const avgRating = coursesRes.data.data.reduce((sum, c) => sum + (c.rating?.average || 0), 0) / totalCourses || 0;
+      const totalCourses = coursesData.length;
+      const totalStudents = coursesData.reduce((sum, c) => sum + (c.enrolledStudents?.length || 0), 0);
+      const totalRevenue = coursesData.reduce((sum, c) => sum + (c.price * (c.enrolledStudents?.length || 0)), 0);
+      const avgRating = coursesData.reduce((sum, c) => sum + (c.rating?.average || 0), 0) / totalCourses || 0;
 
       setStats({
         totalUsers: 1247,
@@ -195,7 +196,7 @@ const AdminDashboard = () => {
                 Admin Control Center
               </h1>
               <p className="header-subtitle">
-                🌐 Managing {stats.totalUsers.toLocaleString()} users across the platform
+                🌐 Managing {stats.totalUsers?.toLocaleString() || 0} users across the platform
               </p>
             </div>
             <div className="header-actions">
