@@ -70,21 +70,17 @@ const StudentDashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch enrolled courses
       const { data: enrolledData } = await api.get('/enrollments/my-enrollments');
       const enrolled = enrolledData?.data || [];
       setEnrolledCourses(enrolled);
 
-      // Fetch all available courses
       const { data: allData } = await api.get('/courses');
       const all = allData?.data || [];
       setAllCourses(all);
 
-      // Fetch certificates
       const { data: certsData } = await api.get('/certificates/my-certificates');
       setCertificates(certsData?.data || []);
 
-      // Calculate stats
       const coursesEnrolled = enrolled.length;
       const coursesCompleted = enrolled.filter(e => e.progress === 100).length;
       const totalProgress = enrolled.reduce((sum, e) => sum + (e.progress || 0), 0);
@@ -176,7 +172,6 @@ const StudentDashboard = () => {
     navigate(`/courses/${courseId}`);
   };
 
-  // Face Recognition Attendance
   const startFaceCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -198,215 +193,214 @@ const StudentDashboard = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       setIsCameraActive(false);
-      toast.info('Camera stopped');
     }
   };
 
-  const captureAttendance = async () => {
+  const captureFaceAttendance = async () => {
     if (!canvasRef.current || !videoRef.current) return;
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
     const context = canvas.getContext('2d');
-
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
 
-    const imageData = canvas.toDataURL('image/jpeg');
+    canvas.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('image', blob, 'face-capture.jpg');
 
+      try {
+        await api.post('/attendance/mark-face', formData);
+        toast.success('✅ Attendance marked successfully!');
+        stopFaceCamera();
+        fetchAttendance();
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Face recognition failed');
+      }
+    }, 'image/jpeg');
+  };
+
+  const startQRScanner = async () => {
     try {
-      // Mock face recognition - in production, send to backend
-      await api.post('/attendance/mark-face', { 
-        image: imageData,
-        courseId: enrolledCourses[0]?.course?._id 
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
       
-      toast.success('✅ Attendance marked successfully!');
-      stopFaceCamera();
-      fetchAttendance();
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setShowQRScanner(true);
+        toast.info('📷 Point camera at QR code');
+      }
     } catch (error) {
-      toast.error('Failed to mark attendance');
+      toast.error('Failed to access camera');
     }
   };
 
-  // QR Code Attendance
-  const handleQRScan = async (qrData) => {
-    try {
-      await api.post('/attendance/mark-qr', { qrCode: qrData });
-      toast.success('✅ Attendance marked via QR!');
+  const stopQRScanner = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       setShowQRScanner(false);
-      fetchAttendance();
-    } catch (error) {
-      toast.error('Invalid QR code or failed to mark attendance');
     }
   };
 
-  // Assignment Submission
   const handleSubmitAssignment = async (assignmentId, file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
       await api.post(`/assignments/${assignmentId}/submit`, formData);
-      toast.success('📝 Assignment submitted successfully!');
-      fetchAssignments();
+      toast.success('✅ Assignment submitted successfully!');
       setShowAssignmentModal(false);
+      fetchAssignments();
     } catch (error) {
       toast.error('Failed to submit assignment');
     }
   };
 
-  // Download Certificate
-  const downloadCertificate = async (certificateId) => {
-    try {
-      const { data } = await api.get(`/certificates/${certificateId}/download`, {
-        responseType: 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `certificate-${certificateId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      
-      toast.success('📜 Certificate downloaded!');
-    } catch (error) {
-      toast.error('Failed to download certificate');
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      logout();
-      navigate('/login');
-      toast.success('👋 Logged out successfully');
-    }
-  };
+  // Chart Data
+  const progressData = enrolledCourses.map(e => ({
+    name: e.course?.title?.substring(0, 15) || 'Course',
+    progress: e.progress || 0
+  }));
+
+  const attendanceData = [
+    { name: 'Present', value: attendanceRecords.filter(r => r.status === 'present').length },
+    { name: 'Absent', value: attendanceRecords.filter(r => r.status === 'absent').length }
+  ];
+
+  const COLORS = ['#10B981', '#EF4444'];
+
+  // Filtering & Pagination
+  const categories = ['all', ...new Set(allCourses.map(c => c.category))];
+  
+  const filteredCourses = (activeTab === 'enrolled' ? enrolledCourses : allCourses).filter(item => {
+    const course = item.course || item;
+    const matchesCategory = categoryFilter === 'all' || course.category === categoryFilter;
+    const matchesSearch = course.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
+  const currentCourses = filteredCourses.slice(
+    (currentPage - 1) * coursesPerPage,
+    currentPage * coursesPerPage
+  );
 
   if (loading) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading Dashboard...</p>
+        <p>Loading your dashboard...</p>
       </div>
     );
   }
-
-  // Filter courses
-  const getFilteredCourses = () => {
-    const courses = activeTab === 'enrolled' ? enrolledCourses : allCourses;
-    let filtered = [...courses];
-
-    if (searchQuery) {
-      filtered = filtered.filter(c => {
-        const course = c.course || c;
-        return course.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      });
-    }
-
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(c => {
-        const course = c.course || c;
-        return course.category === categoryFilter;
-      });
-    }
-
-    return filtered;
-  };
-
-  const filteredCourses = getFilteredCourses();
-  const currentCourses = filteredCourses.slice(
-    (currentPage - 1) * coursesPerPage,
-    currentPage * coursesPerPage
-  );
-  const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
-
-  // Chart data
-  const progressData = [
-    { name: 'Completed', value: stats.coursesCompleted, color: '#10B981' },
-    { name: 'In Progress', value: stats.coursesEnrolled - stats.coursesCompleted, color: '#3B82F6' }
-  ];
-
-  const weeklyActivity = [
-    { day: 'Mon', hours: 2.5 },
-    { day: 'Tue', hours: 3.0 },
-    { day: 'Wed', hours: 1.5 },
-    { day: 'Thu', hours: 4.0 },
-    { day: 'Fri', hours: 2.0 },
-    { day: 'Sat', hours: 3.5 },
-    { day: 'Sun', hours: 2.5 }
-  ];
-
-  const performanceData = [
-    { subject: 'Attendance', value: parseInt(stats.attendanceRate) },
-    { subject: 'Assignments', value: stats.assignmentsCompleted * 10 },
-    { subject: 'Progress', value: parseInt(stats.averageProgress) },
-    { subject: 'Engagement', value: 85 },
-    { subject: 'Grades', value: stats.averageGrade || 75 }
-  ];
-
-  const categories = ['all', 'Programming', 'Design', 'Business', 'Marketing', 'Data Science'];
 
   return (
     <div className="student-dashboard">
       {/* Sidebar */}
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="logo-icon">E</div>
+          <div className="logo-icon">🎓</div>
           <div className="logo-text">EduVillage</div>
           <div className="logo-subtitle">Student Portal</div>
         </div>
-        <nav className="sidebar-nav">
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('overview'); }} className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}>
-            <span className="nav-icon">📊</span>Overview
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('enrolled'); }} className={`nav-item ${activeTab === 'enrolled' ? 'active' : ''}`}>
-            <span className="nav-icon">📚</span>My Courses
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('browse'); }} className={`nav-item ${activeTab === 'browse' ? 'active' : ''}`}>
-            <span className="nav-icon">🔍</span>Browse Courses
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('attendance'); }} className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}>
-            <span className="nav-icon">📅</span>Attendance
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('assignments'); }} className={`nav-item ${activeTab === 'assignments' ? 'active' : ''}`}>
-            <span className="nav-icon">📝</span>Assignments
-            {stats.assignmentsPending > 0 && (
-              <span className="nav-badge">{stats.assignmentsPending}</span>
-            )}
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('certificates'); }} className={`nav-item ${activeTab === 'certificates' ? 'active' : ''}`}>
-            <span className="nav-icon">🏆</span>Certificates
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('schedule'); }} className={`nav-item ${activeTab === 'schedule' ? 'active' : ''}`}>
-            <span className="nav-icon">🗓️</span>Schedule
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('resources'); }} className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`}>
-            <span className="nav-icon">📖</span>Resources
-          </a>
-        </nav>
-      </div>
 
-      {/* Mobile Menu Button */}
-      <button 
-        className="mobile-menu-btn" 
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        ☰
-      </button>
+        <nav className="sidebar-nav">
+          <div 
+            className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <span className="nav-icon">📊</span>
+            <span className="nav-text">Dashboard</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'enrolled' ? 'active' : ''}`}
+            onClick={() => setActiveTab('enrolled')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">My Courses</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'browse' ? 'active' : ''}`}
+            onClick={() => setActiveTab('browse')}
+          >
+            <span className="nav-icon">🔍</span>
+            <span className="nav-text">Browse Courses</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'assignments' ? 'active' : ''}`}
+            onClick={() => setActiveTab('assignments')}
+          >
+            <span className="nav-icon">📝</span>
+            <span className="nav-text">Assignments</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}
+            onClick={() => setActiveTab('attendance')}
+          >
+            <span className="nav-icon">📋</span>
+            <span className="nav-text">Attendance</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            <span className="nav-icon">📈</span>
+            <span className="nav-text">Analytics</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'certificates' ? 'active' : ''}`}
+            onClick={() => setActiveTab('certificates')}
+          >
+            <span className="nav-icon">🏆</span>
+            <span className="nav-text">Certificates</span>
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`}
+            onClick={() => setActiveTab('resources')}
+          >
+            <span className="nav-icon">📖</span>
+            <span className="nav-text">Resources</span>
+          </div>
+        </nav>
+
+        <div className="sidebar-footer">
+          <button className="nav-item logout-btn" onClick={handleLogout}>
+            <span className="nav-icon">🚪</span>
+            <span className="nav-text">Logout</span>
+          </button>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="main-content">
         <div className="content-wrapper">
           {/* Top Header */}
           <div className="top-header">
-            <div className="page-title">
-              Welcome back, <span className="user-name">{user?.name || 'Student'}</span>! 👋
-              <p className="page-subtitle">Continue your learning journey</p>
+            <div className="header-left">
+              <button 
+                className="mobile-menu-btn"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                ☰
+              </button>
+              <div>
+                <h1 className="page-title">
+                  Welcome back, <span className="user-name">{user?.name || 'Student'}!</span>
+                </h1>
+                <p className="page-subtitle">Continue your learning journey</p>
+              </div>
             </div>
+
             <div className="header-right">
               <div className="search-box">
                 <span className="search-icon">🔍</span>
@@ -418,18 +412,26 @@ const StudentDashboard = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="notification-icon" onClick={(e) => { e.stopPropagation(); setShowNotifications(!showNotifications); }}>
-                🔔
-                <span className="notification-badge">{stats.assignmentsPending}</span>
+
+              <div className="notification-icon" onClick={() => setShowNotifications(!showNotifications)}>
+                <span>🔔</span>
+                {upcomingClasses.length > 0 && <span className="notification-badge">{upcomingClasses.length}</span>}
                 {showNotifications && (
                   <div className="notification-dropdown">
                     <h4>Notifications</h4>
-                    <div className="notification-item">• {stats.assignmentsPending} pending assignments</div>
-                    <div className="notification-item">• New course available: Advanced React</div>
+                    {upcomingClasses.slice(0, 3).map((cls, idx) => (
+                      <div key={idx} className="notification-item">
+                        📅 Upcoming: {cls.title}
+                      </div>
+                    ))}
+                    {upcomingClasses.length === 0 && (
+                      <div className="notification-item">No new notifications</div>
+                    )}
                   </div>
                 )}
               </div>
-              <div className="user-profile" onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}>
+
+              <div className="user-profile" onClick={() => setShowUserMenu(!showUserMenu)}>
                 <div className="user-avatar">
                   {user?.name?.charAt(0).toUpperCase() || 'S'}
                 </div>
@@ -437,271 +439,233 @@ const StudentDashboard = () => {
                 <span className="dropdown-icon">▼</span>
                 {showUserMenu && (
                   <div className="user-dropdown">
-                    <a href="#" onClick={(e) => { e.preventDefault(); toast.info('Profile - Coming soon!'); }}>👤 My Profile</a>
-                    <a href="#" onClick={(e) => { e.preventDefault(); toast.info('Settings - Coming soon!'); }}>⚙️ Settings</a>
+                    <a href="/profile">Profile Settings</a>
                     <hr />
-                    <button onClick={handleLogout}>🚪 Logout</button>
+                    <button onClick={handleLogout}>Logout</button>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* OVERVIEW TAB */}
+          {/* Overview Tab */}
           {activeTab === 'overview' && (
             <>
               {/* Stats Row */}
               <div className="stats-row">
-                <div className="stat-card blue">
-                  <div className="stat-icon">📚</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.coursesEnrolled}</div>
-                    <div className="stat-label">Enrolled Courses</div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+                    📚
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.coursesEnrolled}</h3>
+                    <p className="stat-label">Enrolled Courses</p>
                   </div>
                 </div>
-                <div className="stat-card green">
-                  <div className="stat-icon">✅</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.coursesCompleted}</div>
-                    <div className="stat-label">Completed</div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4FD1C5, #38B2AC)' }}>
+                    ✅
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.coursesCompleted}</h3>
+                    <p className="stat-label">Completed</p>
                   </div>
                 </div>
-                <div className="stat-card orange">
-                  <div className="stat-icon">⏱️</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.hoursLearned}h</div>
-                    <div className="stat-label">Hours Learned</div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B, #F97316)' }}>
+                    ⏱️
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.hoursLearned}h</h3>
+                    <p className="stat-label">Hours Learned</p>
                   </div>
                 </div>
-                <div className="stat-card purple">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.averageProgress}%</div>
-                    <div className="stat-label">Avg Progress</div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                    📋
                   </div>
-                </div>
-                <div className="stat-card pink">
-                  <div className="stat-icon">📅</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.attendanceRate}%</div>
-                    <div className="stat-label">Attendance</div>
-                  </div>
-                </div>
-                <div className="stat-card cyan">
-                  <div className="stat-icon">📝</div>
-                  <div className="stat-content">
-                    <div className="stat-value">{stats.assignmentsCompleted}</div>
-                    <div className="stat-label">Assignments Done</div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.attendanceRate}%</h3>
+                    <p className="stat-label">Attendance</p>
                   </div>
                 </div>
               </div>
 
               {/* Dashboard Grid */}
               <div className="dashboard-grid">
-                {/* Left Column */}
-                <div className="left-column">
-                  {/* Progress Chart */}
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3>Learning Progress</h3>
-                    </div>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <PieChart>
-                        <Pie
-                          data={progressData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={70}
-                          outerRadius={90}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {progressData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Weekly Activity */}
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3>Weekly Activity</h3>
-                    </div>
-                    <ResponsiveContainer width="100%" height={220}>
-                      <BarChart data={weeklyActivity}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
-                        <XAxis dataKey="day" stroke="#9CA3AF" />
-                        <YAxis stroke="#9CA3AF" />
-                        <Tooltip />
-                        <Bar dataKey="hours" fill="#4FD1C5" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-
-                  {/* Performance Radar */}
-                  <div className="chart-card">
-                    <div className="chart-header">
-                      <h3>Performance Overview</h3>
-                    </div>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <RadarChart data={performanceData}>
-                        <PolarGrid stroke="#E5E7EB" />
-                        <PolarAngleAxis dataKey="subject" stroke="#6B7280" />
-                        <PolarRadiusAxis stroke="#9CA3AF" />
-                        <Radar name="Performance" dataKey="value" stroke="#1E3A8A" fill="#3B82F6" fillOpacity={0.6} />
-                        <Tooltip />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
+                {/* Progress Chart */}
+                <div className="chart-card">
+                  <h2 className="section-title">📊 Course Progress</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={progressData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="progress" fill="#1E3A8A" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
 
-                {/* Right Column */}
-                <div className="right-column">
-                  {/* Achievement Card */}
-                  <div className="achievement-card">
-                    <div className="achievement-icon">🔥</div>
-                    <div className="achievement-content">
-                      <h3>{stats.streak} Day Streak!</h3>
-                      <p>Keep learning every day!</p>
-                    </div>
-                  </div>
+                {/* Attendance Pie */}
+                <div className="chart-card">
+                  <h2 className="section-title">📋 Attendance Overview</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={attendanceData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={(entry) => `${entry.name}: ${entry.value}`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {attendanceData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
 
-                  {/* Upcoming Classes */}
-                  <div className="upcoming-card">
-                    <div className="card-header">
-                      <h3>📅 Upcoming Classes</h3>
-                    </div>
-                    <div className="classes-list">
-                      {upcomingClasses.length === 0 ? (
-                        <p className="empty-text">No upcoming classes</p>
-                      ) : (
-                        upcomingClasses.slice(0, 5).map((cls, idx) => (
-                          <div key={idx} className="class-item">
-                            <div className="class-time">{new Date(cls.startTime).toLocaleTimeString()}</div>
-                            <div className="class-info">
-                              <div className="class-title">{cls.title}</div>
-                              <div className="class-teacher">by {cls.teacher?.name}</div>
-                            </div>
-                            <button className="join-btn">Join</button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Recent Assignments */}
-                  <div className="assignments-card">
-                    <div className="card-header">
-                      <h3>📝 Pending Assignments</h3>
-                    </div>
-                    <div className="assignments-list">
-                      {assignments.filter(a => a.status === 'pending').slice(0, 4).map((assignment, idx) => (
-                        <div key={idx} className="assignment-item">
-                          <div className="assignment-info">
-                            <div className="assignment-title">{assignment.title}</div>
-                            <div className="assignment-course">{assignment.course?.title}</div>
-                          </div>
-                          <div className="assignment-due">
-                            Due: {new Date(assignment.dueDate).toLocaleDateString()}
-                          </div>
+              {/* Upcoming Classes */}
+              <div className="upcoming-section">
+                <h2 className="section-title">📅 Upcoming Classes</h2>
+                <div className="classes-grid">
+                  {upcomingClasses.length > 0 ? (
+                    upcomingClasses.map((cls, idx) => (
+                      <div key={idx} className="class-card">
+                        <div className="class-time">
+                          <span className="time-icon">🕐</span>
+                          {new Date(cls.date).toLocaleDateString()}
                         </div>
-                      ))}
-                      {assignments.filter(a => a.status === 'pending').length === 0 && (
-                        <p className="empty-text">No pending assignments</p>
-                      )}
+                        <h3 className="class-title">{cls.title}</h3>
+                        <p className="class-instructor">👨‍🏫 {cls.instructor}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="empty-state">
+                      <div className="empty-icon">📅</div>
+                      <h3>No Upcoming Classes</h3>
+                      <p>Your schedule is clear!</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </>
           )}
 
-          {/* ATTENDANCE TAB */}
-          {activeTab === 'attendance' && (
-            <div className="attendance-section">
-              <h2 className="section-title">📅 Attendance Management</h2>
+          {/* Assignments Tab */}
+          {activeTab === 'assignments' && (
+            <div className="assignments-section">
+              <h2 className="section-title">📝 My Assignments</h2>
               
-              <div className="attendance-grid">
-                {/* Face Recognition */}
-                <div className="attendance-card">
-                  <div className="card-header">
-                    <h3>📸 Face Recognition Attendance</h3>
-                  </div>
-                  <div className="camera-container">
-                    {isCameraActive ? (
-                      <div className="video-wrapper">
-                        <video ref={videoRef} autoPlay className="video-feed"></video>
-                        <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-                        <div className="camera-controls">
-                          <button onClick={captureAttendance} className="capture-btn">
-                            📸 Mark Attendance
-                          </button>
-                          <button onClick={stopFaceCamera} className="stop-btn">
-                            ⏹️ Stop Camera
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="camera-placeholder">
-                        <div className="placeholder-icon">📷</div>
-                        <p>Click below to start camera</p>
-                        <button onClick={startFaceCamera} className="start-btn">
-                          Start Camera
-                        </button>
-                      </div>
-                    )}
-                  </div>
+              <div className="assignments-stats">
+                <div className="assignment-stat">
+                  <span className="stat-number">{stats.assignmentsPending}</span>
+                  <span className="stat-text">Pending</span>
                 </div>
-
-                {/* QR Code Scanner */}
-                <div className="attendance-card">
-                  <div className="card-header">
-                    <h3>📱 QR Code Attendance</h3>
-                  </div>
-                  <div className="qr-container">
-                    {showQRScanner ? (
-                      <div className="qr-scanner">
-                        <div className="qr-placeholder">
-                          <p>📱 Scan QR Code</p>
-                          <p className="qr-instruction">Align QR code within frame</p>
-                          <button onClick={() => handleQRScan('DEMO_QR_123')} className="scan-demo-btn">
-                            Simulate Scan (Demo)
-                          </button>
-                          <button onClick={() => setShowQRScanner(false)} className="cancel-btn">
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="qr-placeholder">
-                        <div className="placeholder-icon">📱</div>
-                        <p>Scan QR code to mark attendance</p>
-                        <button onClick={() => setShowQRScanner(true)} className="start-btn">
-                          Open Scanner
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                <div className="assignment-stat completed">
+                  <span className="stat-number">{stats.assignmentsCompleted}</span>
+                  <span className="stat-text">Completed</span>
                 </div>
               </div>
 
-              {/* Attendance History */}
-              <div className="attendance-history-card">
-                <div className="card-header">
-                  <h3>📊 Attendance History</h3>
+              <div className="assignments-grid">
+                {assignments.length > 0 ? (
+                  assignments.map((assignment, idx) => (
+                    <div key={idx} className="assignment-card">
+                      <div className="assignment-header">
+                        <h3>{assignment.title}</h3>
+                        <span className={`status-badge ${assignment.status}`}>
+                          {assignment.status}
+                        </span>
+                      </div>
+                      <p className="assignment-desc">{assignment.description}</p>
+                      <div className="assignment-footer">
+                        <span className="due-date">📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                        {assignment.status === 'pending' && (
+                          <button 
+                            className="submit-btn"
+                            onClick={() => {
+                              setSelectedAssignment(assignment);
+                              setShowAssignmentModal(true);
+                            }}
+                          >
+                            Submit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">📝</div>
+                    <h3>No Assignments</h3>
+                    <p>You're all caught up!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Attendance Tab */}
+          {activeTab === 'attendance' && (
+            <div className="attendance-section">
+              <h2 className="section-title">📋 My Attendance</h2>
+              
+              <div className="attendance-actions">
+                <button className="action-btn primary" onClick={startFaceCamera}>
+                  📸 Mark via Face Recognition
+                </button>
+                <button className="action-btn secondary" onClick={startQRScanner}>
+                  📷 Scan QR Code
+                </button>
+              </div>
+
+              {isCameraActive && (
+                <div className="camera-modal">
+                  <div className="camera-container">
+                    <video ref={videoRef} autoPlay className="camera-video"></video>
+                    <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                    <div className="camera-controls">
+                      <button className="capture-btn" onClick={captureFaceAttendance}>
+                        Capture & Mark
+                      </button>
+                      <button className="cancel-btn" onClick={stopFaceCamera}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="table-wrapper">
+              )}
+
+              {showQRScanner && (
+                <div className="camera-modal">
+                  <div className="camera-container">
+                    <video ref={videoRef} autoPlay className="camera-video"></video>
+                    <button className="cancel-btn" onClick={stopQRScanner}>
+                      Close Scanner
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="attendance-list">
+                <h3>Attendance History</h3>
+                {attendanceRecords.length > 0 ? (
                   <table className="attendance-table">
                     <thead>
                       <tr>
                         <th>Date</th>
                         <th>Course</th>
-                        <th>Time</th>
-                        <th>Method</th>
                         <th>Status</th>
                       </tr>
                     </thead>
@@ -709,97 +673,89 @@ const StudentDashboard = () => {
                       {attendanceRecords.map((record, idx) => (
                         <tr key={idx}>
                           <td>{new Date(record.date).toLocaleDateString()}</td>
-                          <td>{record.course?.title || 'N/A'}</td>
-                          <td>{new Date(record.date).toLocaleTimeString()}</td>
-                          <td>{record.method || 'Manual'}</td>
+                          <td>{record.course}</td>
                           <td>
-                            <span className={`badge badge-${record.status}`}>
+                            <span className={`status-badge ${record.status}`}>
                               {record.status}
                             </span>
                           </td>
                         </tr>
                       ))}
-                      {attendanceRecords.length === 0 && (
-                        <tr>
-                          <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
-                            No attendance records found
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ASSIGNMENTS TAB */}
-          {activeTab === 'assignments' && (
-            <div className="assignments-section">
-              <h2 className="section-title">📝 My Assignments</h2>
-              
-              <div className="assignments-grid">
-                {assignments.map((assignment, idx) => (
-                  <div key={idx} className="assignment-card-full">
-                    <div className="assignment-header-full">
-                      <div>
-                        <h3>{assignment.title}</h3>
-                        <p className="assignment-course-name">{assignment.course?.title}</p>
-                      </div>
-                      <span className={`badge badge-${assignment.status}`}>
-                        {assignment.status}
-                      </span>
-                    </div>
-                    <p className="assignment-description">{assignment.description}</p>
-                    <div className="assignment-meta-full">
-                      <div>📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}</div>
-                      <div>📊 Grade: {assignment.grade || 'Not graded'}</div>
-                    </div>
-                    {assignment.status === 'pending' && (
-                      <button 
-                        onClick={() => {
-                          setSelectedAssignment(assignment);
-                          setShowAssignmentModal(true);
-                        }}
-                        className="submit-assignment-btn"
-                      >
-                        Submit Assignment
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {assignments.length === 0 && (
+                ) : (
                   <div className="empty-state">
-                    <div className="empty-icon">📝</div>
-                    <h3>No Assignments Yet</h3>
-                    <p>Your assignments will appear here</p>
+                    <div className="empty-icon">📋</div>
+                    <h3>No Attendance Records</h3>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* CERTIFICATES TAB */}
+          {/* Analytics Tab */}
+          {activeTab === 'analytics' && (
+            <div className="analytics-section">
+              <h2 className="section-title">📈 Learning Analytics</h2>
+              
+              <div className="analytics-grid">
+                <div className="chart-card">
+                  <h3>Course Progress Over Time</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={progressData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="progress" stroke="#1E3A8A" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="chart-card">
+                  <h3>Performance Radar</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart data={[
+                      { subject: 'Attendance', value: stats.attendanceRate },
+                      { subject: 'Assignments', value: (stats.assignmentsCompleted / (stats.assignmentsCompleted + stats.assignmentsPending) * 100) || 0 },
+                      { subject: 'Course Progress', value: stats.averageProgress },
+                      { subject: 'Engagement', value: 85 },
+                      { subject: 'Participation', value: 78 }
+                    ]}>
+                      <PolarGrid />
+                      <PolarAngleAxis dataKey="subject" />
+                      <PolarRadiusAxis />
+                      <Radar name="Performance" dataKey="value" stroke="#1E3A8A" fill="#1E3A8A" fillOpacity={0.6} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="achievement-card">
+                <div className="achievement-icon">🏆</div>
+                <div className="achievement-content">
+                  <h3>🎉 {stats.streak} Day Streak!</h3>
+                  <p>You're on fire! Keep up the great work.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Certificates Tab */}
           {activeTab === 'certificates' && (
             <div className="certificates-section">
               <h2 className="section-title">🏆 My Certificates</h2>
-              
               <div className="certificates-grid">
-                {certificates.map((cert, idx) => (
-                  <div key={idx} className="certificate-card">
-                    <div className="certificate-icon">🏆</div>
-                    <h3>{cert.course?.title}</h3>
-                    <p>Completed: {new Date(cert.issuedDate).toLocaleDateString()}</p>
-                    <p className="certificate-id">ID: {cert.certificateId}</p>
-                    <button 
-                      onClick={() => downloadCertificate(cert._id)}
-                      className="download-cert-btn"
-                    >
-                      📥 Download Certificate
-                    </button>
-                  </div>
-                ))}
-                {certificates.length === 0 && (
+                {certificates.length > 0 ? (
+                  certificates.map((cert, idx) => (
+                    <div key={idx} className="certificate-card">
+                      <div className="certificate-icon">🏆</div>
+                      <h3>{cert.courseName}</h3>
+                      <p>Issued: {new Date(cert.issuedDate).toLocaleDateString()}</p>
+                      <button className="download-btn">Download Certificate</button>
+                    </div>
+                  ))
+                ) : (
                   <div className="empty-state">
                     <div className="empty-icon">🏆</div>
                     <h3>No Certificates Yet</h3>
@@ -810,42 +766,7 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* SCHEDULE TAB */}
-          {activeTab === 'schedule' && (
-            <div className="schedule-section">
-              <h2 className="section-title">🗓️ Class Schedule</h2>
-              
-              <div className="schedule-grid">
-                {upcomingClasses.map((cls, idx) => (
-                  <div key={idx} className="schedule-card">
-                    <div className="schedule-time">
-                      <div className="time-large">
-                        {new Date(cls.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                      <div className="date-small">
-                        {new Date(cls.startTime).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="schedule-info">
-                      <h3>{cls.title}</h3>
-                      <p>📚 {cls.course?.title}</p>
-                      <p>👨‍🏫 {cls.teacher?.name}</p>
-                    </div>
-                    <button className="join-class-btn">Join Class</button>
-                  </div>
-                ))}
-                {upcomingClasses.length === 0 && (
-                  <div className="empty-state">
-                    <div className="empty-icon">🗓️</div>
-                    <h3>No Upcoming Classes</h3>
-                    <p>Your schedule is clear</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* RESOURCES TAB */}
+          {/* Resources Tab */}
           {activeTab === 'resources' && (
             <div className="resources-section">
               <h2 className="section-title">📖 Study Resources</h2>
@@ -885,7 +806,7 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* COURSES TABS (Enrolled & Browse) */}
+          {/* Courses Tabs (Enrolled & Browse) */}
           {(activeTab === 'enrolled' || activeTab === 'browse') && (
             <div className="courses-section">
               <div className="section-header">

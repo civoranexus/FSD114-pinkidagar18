@@ -1,29 +1,47 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/common/Navbar';  // ← CORRECT PATH
+import Navbar from './components/common/Navbar';
 import Home from './pages/Home';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Courses from './pages/CourseCatalog';  // ← You have CourseCatalog.jsx
+import Courses from './pages/CourseCatalog';
 import CourseDetail from './pages/CourseDetail';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import StudentCourseView from './pages/CoursePlayer';  // ← You have CoursePlayer.jsx
-import ProtectedRoute from './components/ProtectedRoute';  // ← CORRECT PATH
+import StudentCourseView from './pages/CoursePlayer';
+import ProtectedRoute from './components/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+
+// Component to conditionally render Navbar
+function ConditionalNavbar() {
+  const location = useLocation();
+  
+  // Hide navbar on dashboard pages (they have their own internal navigation)
+  const hiddenPaths = [
+    '/student/dashboard',
+    '/teacher/dashboard',
+    '/admin/dashboard',
+    '/student/course'
+  ];
+  
+  const shouldHideNavbar = hiddenPaths.some(path => location.pathname.startsWith(path));
+  
+  return !shouldHideNavbar ? <Navbar /> : null;
+}
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <div className="App">
-          <Navbar />
+          <ConditionalNavbar />
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
@@ -31,7 +49,7 @@ function App() {
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
             
-            {/* Protected Routes */}
+            {/* Protected Student Routes */}
             <Route 
               path="/student/dashboard" 
               element={
@@ -48,6 +66,8 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            
+            {/* Protected Teacher Routes */}
             <Route 
               path="/teacher/dashboard" 
               element={
@@ -56,6 +76,8 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            
+            {/* Protected Admin Routes */}
             <Route 
               path="/admin/dashboard" 
               element={
@@ -65,10 +87,23 @@ function App() {
               } 
             />
             
-            {/* Catch all */}
+            {/* Catch all - redirect to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <ToastContainer position="top-right" autoClose={3000} />
+          
+          {/* Toast Notifications */}
+          <ToastContainer 
+            position="top-right" 
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
         </div>
       </Router>
     </AuthProvider>

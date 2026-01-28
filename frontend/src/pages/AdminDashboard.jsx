@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import './AdminDashboard.css';
 
@@ -21,15 +20,13 @@ const AdminDashboard = () => {
   const [subjects, setSubjects] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [systemLogs, setSystemLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Form States
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [formData, setFormData] = useState({});
 
   // Stats
@@ -37,15 +34,19 @@ const AdminDashboard = () => {
     totalStudents: 0,
     totalTeachers: 0,
     totalCourses: 0,
-    totalRevenue: 0,
-    activeUsers: 0,
-    pendingApprovals: 0,
-    systemHealth: 100,
-    avgAttendance: 0
+    avgAttendance: 0,
   });
 
   useEffect(() => {
     fetchAllData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.user-profile')) setShowUserMenu(false);
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const fetchAllData = async () => {
@@ -57,12 +58,10 @@ const AdminDashboard = () => {
         fetchCourses(),
         fetchSubjects(),
         fetchAttendance(),
-        fetchNotifications(),
-        fetchSystemStats()
+        fetchNotifications()
       ]);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -72,8 +71,9 @@ const AdminDashboard = () => {
     try {
       const { data } = await api.get('/admin/students');
       setStudents(data?.data || []);
+      setStats(prev => ({ ...prev, totalStudents: data?.data?.length || 0 }));
     } catch (error) {
-      console.error('Error fetching students:', error);
+      setStudents([]);
     }
   };
 
@@ -81,8 +81,9 @@ const AdminDashboard = () => {
     try {
       const { data } = await api.get('/admin/teachers');
       setTeachers(data?.data || []);
+      setStats(prev => ({ ...prev, totalTeachers: data?.data?.length || 0 }));
     } catch (error) {
-      console.error('Error fetching teachers:', error);
+      setTeachers([]);
     }
   };
 
@@ -90,8 +91,9 @@ const AdminDashboard = () => {
     try {
       const { data } = await api.get('/courses');
       setCourses(data?.data || []);
+      setStats(prev => ({ ...prev, totalCourses: data?.data?.length || 0 }));
     } catch (error) {
-      console.error('Error fetching courses:', error);
+      setCourses([]);
     }
   };
 
@@ -100,16 +102,24 @@ const AdminDashboard = () => {
       const { data } = await api.get('/admin/subjects');
       setSubjects(data?.data || []);
     } catch (error) {
-      console.error('Error fetching subjects:', error);
+      setSubjects([]);
     }
   };
 
   const fetchAttendance = async () => {
     try {
       const { data } = await api.get('/admin/attendance');
-      setAttendance(data?.data || []);
+      const records = data?.data || [];
+      setAttendance(records);
+      
+      if (records.length > 0) {
+        const totalRecords = records.length;
+        const presentRecords = records.filter(r => r.status === 'present').length;
+        const avgAttendance = ((presentRecords / totalRecords) * 100).toFixed(1);
+        setStats(prev => ({ ...prev, avgAttendance: parseFloat(avgAttendance) }));
+      }
     } catch (error) {
-      console.error('Error fetching attendance:', error);
+      setAttendance([]);
     }
   };
 
@@ -118,567 +128,337 @@ const AdminDashboard = () => {
       const { data } = await api.get('/admin/notifications');
       setNotifications(data?.data || []);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      setNotifications([]);
     }
   };
 
-  const fetchSystemStats = async () => {
-    try {
-      const { data } = await api.get('/admin/stats');
-      setStats(data?.data || stats);
-    } catch (error) {
-      // Use mock data if API fails
-      setStats({
-        totalStudents: students.length || 1250,
-        totalTeachers: teachers.length || 85,
-        totalCourses: courses.length || 42,
-        totalRevenue: 2850000,
-        activeUsers: 1180,
-        pendingApprovals: 15,
-        systemHealth: 98,
-        avgAttendance: 87.5
-      });
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
-  // CRUD Operations
-  const handleAdd = (type) => {
-    setModalType(type);
-    setSelectedItem(null);
-    setFormData({});
-    setShowModal(true);
-  };
-
-  const handleEdit = (type, item) => {
+  const openModal = (type, item = null) => {
     setModalType(type);
     setSelectedItem(item);
-    setFormData(item);
+    setFormData(item || {});
     setShowModal(true);
   };
 
-  const handleDelete = async (type, id) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
+  const closeModal = () => {
+    setShowModal(false);
+    setModalType('');
+    setSelectedItem(null);
+    setFormData({});
+  };
+
+  const handleDelete = async (type, id, name) => {
+    if (!window.confirm(`Delete ${name}? This action cannot be undone!`)) return;
 
     try {
       await api.delete(`/admin/${type}/${id}`);
-      toast.success(`${type} deleted successfully!`);
+      toast.success(`✅ ${type} deleted successfully`);
       fetchAllData();
     } catch (error) {
       toast.error(`Failed to delete ${type}`);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (selectedItem) {
-        // Update
-        await api.put(`/admin/${modalType}/${selectedItem._id}`, formData);
-        toast.success(`${modalType} updated successfully!`);
-      } else {
-        // Create
-        await api.post(`/admin/${modalType}`, formData);
-        toast.success(`${modalType} created successfully!`);
-      }
-      
-      setShowModal(false);
-      fetchAllData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || `Failed to save ${modalType}`);
-    }
+  const getChartData = () => {
+    return [
+      { day: 'Mon', students: 45, teachers: 8 },
+      { day: 'Tue', students: 52, teachers: 9 },
+      { day: 'Wed', students: 48, teachers: 7 },
+      { day: 'Thu', students: 55, teachers: 10 },
+      { day: 'Fri', students: 50, teachers: 8 },
+      { day: 'Sat', students: 30, teachers: 5 },
+      { day: 'Sun', students: 20, teachers: 3 }
+    ];
   };
 
-  const handleApprove = async (type, id) => {
-    try {
-      await api.put(`/admin/${type}/${id}/approve`);
-      toast.success(`${type} approved!`);
-      fetchAllData();
-    } catch (error) {
-      toast.error(`Failed to approve ${type}`);
-    }
-  };
+  const COLORS = ['#1E3A8A', '#3B82F6', '#10B981', '#F59E0B'];
 
-  const handleReject = async (type, id) => {
-    try {
-      await api.put(`/admin/${type}/${id}/reject`);
-      toast.success(`${type} rejected!`);
-      fetchAllData();
-    } catch (error) {
-      toast.error(`Failed to reject ${type}`);
-    }
-  };
-
-  const handleBroadcastNotification = async (message) => {
-    try {
-      await api.post('/admin/notifications/broadcast', { message });
-      toast.success('Notification sent to all users!');
-      fetchNotifications();
-    } catch (error) {
-      toast.error('Failed to send notification');
-    }
-  };
-
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      logout();
-      navigate('/login');
-      toast.success('Logged out successfully');
-    }
-  };
-
-  if (loading) {
+  if (loading && students.length === 0) {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading Admin Dashboard...</p>
+        <p>Loading Dashboard...</p>
       </div>
     );
   }
-
-  // Chart Data
-  const userGrowthData = [
-    { month: 'Jan', students: 980, teachers: 72 },
-    { month: 'Feb', students: 1050, teachers: 75 },
-    { month: 'Mar', students: 1120, teachers: 78 },
-    { month: 'Apr', students: 1180, teachers: 82 },
-    { month: 'May', students: 1220, teachers: 84 },
-    { month: 'Jun', students: 1250, teachers: 85 }
-  ];
-
-  const revenueData = [
-    { month: 'Jan', revenue: 1850000 },
-    { month: 'Feb', revenue: 2100000 },
-    { month: 'Mar', revenue: 2350000 },
-    { month: 'Apr', revenue: 2550000 },
-    { month: 'May', revenue: 2700000 },
-    { month: 'Jun', revenue: 2850000 }
-  ];
-
-  const courseDistribution = [
-    { name: 'Programming', value: 15, color: '#3B82F6' },
-    { name: 'Design', value: 10, color: '#10B981' },
-    { name: 'Business', value: 8, color: '#F59E0B' },
-    { name: 'Marketing', value: 6, color: '#8B5CF6' },
-    { name: 'Data Science', value: 3, color: '#EC4899' }
-  ];
-
-  const recentActivities = [
-    { icon: '👤', title: 'New Student Registration', desc: 'John Doe registered', time: '5 min ago' },
-    { icon: '📚', title: 'Course Published', desc: 'Advanced React by Sarah', time: '15 min ago' },
-    { icon: '💰', title: 'Payment Received', desc: '₹15,000 from enrollment', time: '1 hour ago' },
-    { icon: '🎓', title: 'Certificate Issued', desc: 'Web Dev certificate to Mike', time: '2 hours ago' },
-    { icon: '👨‍🏫', title: 'New Teacher Joined', desc: 'Prof. Kumar approved', time: '3 hours ago' }
-  ];
 
   return (
     <div className="admin-dashboard">
       {/* Sidebar */}
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo">
-            <div className="logo-icon">E</div>
-            <div className="logo-text">EduVillage</div>
-          </div>
-          <p className="logo-subtitle">Admin Control Center</p>
+        <div className="sidebar-logo">
+          <div className="logo-icon">🎓</div>
+          <div className="logo-text">EduVillage</div>
+          <div className="logo-subtitle">Admin Portal</div>
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-section">
-            <div className="nav-title">MAIN</div>
-            <ul className="nav-menu">
-              <li className="nav-item">
-                <a 
-                  href="#" 
-                  className={`nav-link ${activeSection === 'dashboard' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('dashboard'); }}
-                >
-                  <span className="nav-icon">📊</span>
-                  Dashboard
-                </a>
-              </li>
-            </ul>
+          <div 
+            className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveSection('dashboard')}
+          >
+            <span className="nav-icon">📊</span>
+            <span className="nav-text">Dashboard</span>
           </div>
-
-          <div className="nav-section">
-            <div className="nav-title">MANAGEMENT</div>
-            <ul className="nav-menu">
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'students' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('students'); }}
-                >
-                  <span className="nav-icon">👥</span>
-                  Students
-                  <span className="notification-badge">{students.length}</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'teachers' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('teachers'); }}
-                >
-                  <span className="nav-icon">👨‍🏫</span>
-                  Teachers
-                  <span className="notification-badge">{teachers.length}</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'courses' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('courses'); }}
-                >
-                  <span className="nav-icon">📚</span>
-                  Courses
-                  {stats.pendingApprovals > 0 && (
-                    <span className="notification-badge">{stats.pendingApprovals}</span>
-                  )}
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'subjects' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('subjects'); }}
-                >
-                  <span className="nav-icon">📖</span>
-                  Subjects
-                </a>
-              </li>
-            </ul>
+          <div 
+            className={`nav-item ${activeSection === 'students' ? 'active' : ''}`}
+            onClick={() => setActiveSection('students')}
+          >
+            <span className="nav-icon">👥</span>
+            <span className="nav-text">Students</span>
+            {stats.totalStudents > 0 && (
+              <span className="nav-badge">{stats.totalStudents}</span>
+            )}
           </div>
-
-          <div className="nav-section">
-            <div className="nav-title">OPERATIONS</div>
-            <ul className="nav-menu">
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'timetable' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('timetable'); }}
-                >
-                  <span className="nav-icon">🗓️</span>
-                  Timetable
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'attendance' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('attendance'); }}
-                >
-                  <span className="nav-icon">📅</span>
-                  Attendance
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'notifications' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('notifications'); }}
-                >
-                  <span className="nav-icon">🔔</span>
-                  Notifications
-                </a>
-              </li>
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'reports' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('reports'); }}
-                >
-                  <span className="nav-icon">📈</span>
-                  Reports
-                </a>
-              </li>
-            </ul>
+          <div 
+            className={`nav-item ${activeSection === 'teachers' ? 'active' : ''}`}
+            onClick={() => setActiveSection('teachers')}
+          >
+            <span className="nav-icon">🎓</span>
+            <span className="nav-text">Teachers</span>
+            {stats.totalTeachers > 0 && (
+              <span className="nav-badge">{stats.totalTeachers}</span>
+            )}
           </div>
-
-          <div className="nav-section">
-            <div className="nav-title">SYSTEM</div>
-            <ul className="nav-menu">
-              <li className="nav-item">
-                <a 
-                  href="#"
-                  className={`nav-link ${activeSection === 'settings' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveSection('settings'); }}
-                >
-                  <span className="nav-icon">⚙️</span>
-                  Settings
-                </a>
-              </li>
-            </ul>
+          <div 
+            className={`nav-item ${activeSection === 'courses' ? 'active' : ''}`}
+            onClick={() => setActiveSection('courses')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="nav-text">Courses</span>
+            {stats.totalCourses > 0 && (
+              <span className="nav-badge">{stats.totalCourses}</span>
+            )}
+          </div>
+          <div 
+            className={`nav-item ${activeSection === 'subjects' ? 'active' : ''}`}
+            onClick={() => setActiveSection('subjects')}
+          >
+            <span className="nav-icon">📖</span>
+            <span className="nav-text">Subjects</span>
+          </div>
+          <div 
+            className={`nav-item ${activeSection === 'attendance' ? 'active' : ''}`}
+            onClick={() => setActiveSection('attendance')}
+          >
+            <span className="nav-icon">✅</span>
+            <span className="nav-text">Attendance</span>
+          </div>
+          <div 
+            className={`nav-item ${activeSection === 'notifications' ? 'active' : ''}`}
+            onClick={() => setActiveSection('notifications')}
+          >
+            <span className="nav-icon">🔔</span>
+            <span className="nav-text">Notifications</span>
+          </div>
+          <div 
+            className={`nav-item ${activeSection === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveSection('reports')}
+          >
+            <span className="nav-icon">📈</span>
+            <span className="nav-text">Reports</span>
+          </div>
+          <div 
+            className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveSection('settings')}
+          >
+            <span className="nav-icon">⚙️</span>
+            <span className="nav-text">Settings</span>
           </div>
         </nav>
 
-        <div className="user-section">
-          <div className="user-card">
-            <div className="user-avatar">A</div>
-            <div className="user-info">
-              <h4>{user?.name || 'Admin'}</h4>
-              <p>System Administrator</p>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="logout-btn">
-            <span>🚪</span> Logout
+        <div className="sidebar-footer">
+          <button className="nav-item logout-btn" onClick={handleLogout}>
+            <span className="nav-icon">🚪</span>
+            <span className="nav-text">Logout</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile Toggle */}
-      <button className="mobile-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        ☰
-      </button>
-
       {/* Main Content */}
       <div className="main-content">
-        {/* DASHBOARD SECTION */}
-        {activeSection === 'dashboard' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Dashboard</span>
-                </div>
-                <h1 className="page-title">System Overview</h1>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">👥</div>
-                <div className="stat-value">{stats.totalStudents.toLocaleString()}</div>
-                <div className="stat-label">Total Students</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 12.5%</span> from last month
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">👨‍🏫</div>
-                <div className="stat-value">{stats.totalTeachers}</div>
-                <div className="stat-label">Total Teachers</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 8.3%</span> from last month
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">📚</div>
-                <div className="stat-value">{stats.totalCourses}</div>
-                <div className="stat-label">Total Courses</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 15.2%</span> from last month
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">💰</div>
-                <div className="stat-value">₹{(stats.totalRevenue / 1000000).toFixed(2)}M</div>
-                <div className="stat-label">Total Revenue</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 23.1%</span> from last month
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">🟢</div>
-                <div className="stat-value">{stats.activeUsers.toLocaleString()}</div>
-                <div className="stat-label">Active Users</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 5.7%</span> from last week
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">⏳</div>
-                <div className="stat-value">{stats.pendingApprovals}</div>
-                <div className="stat-label">Pending Approvals</div>
-                <div className="stat-trend">
-                  <span>🔔</span> Needs attention
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">📊</div>
-                <div className="stat-value">{stats.avgAttendance}%</div>
-                <div className="stat-label">Avg Attendance</div>
-                <div className="stat-trend trend-up">
-                  <span>↑ 3.2%</span> from last month
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">💚</div>
-                <div className="stat-value">{stats.systemHealth}%</div>
-                <div className="stat-label">System Health</div>
-                <div className="stat-trend trend-up">
-                  <span>✓</span> All systems operational
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard Grid */}
-            <div className="dashboard-grid">
-              {/* Left Column */}
-              <div className="left-column">
-                {/* User Growth Chart */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <h2 className="card-title">User Growth</h2>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={userGrowthData}>
-                      <defs>
-                        <linearGradient id="colorStudents" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorTeachers" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="month" stroke="#6B7280" />
-                      <YAxis stroke="#6B7280" />
-                      <Tooltip />
-                      <Legend />
-                      <Area type="monotone" dataKey="students" stroke="#3B82F6" fillOpacity={1} fill="url(#colorStudents)" />
-                      <Area type="monotone" dataKey="teachers" stroke="#10B981" fillOpacity={1} fill="url(#colorTeachers)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Revenue Chart */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <h2 className="card-title">Revenue Analytics</h2>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="month" stroke="#6B7280" />
-                      <YAxis stroke="#6B7280" />
-                      <Tooltip formatter={(value) => `₹${(value / 1000000).toFixed(2)}M`} />
-                      <Bar dataKey="revenue" fill="#8B5CF6" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Course Distribution */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <h2 className="card-title">Course Distribution</h2>
-                  </div>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={courseDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(entry) => `${entry.name}: ${entry.value}`}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {courseDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="right-column">
-                {/* Recent Activities */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <h2 className="card-title">Recent Activities</h2>
-                  </div>
-                  <div className="activities-list">
-                    {recentActivities.map((activity, idx) => (
-                      <div key={idx} className="activity-item">
-                        <div className="activity-icon">{activity.icon}</div>
-                        <div className="activity-content">
-                          <div className="activity-title">{activity.title}</div>
-                          <div className="activity-desc">{activity.desc}</div>
-                          <div className="activity-time">{activity.time}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="content-card">
-                  <div className="card-header">
-                    <h2 className="card-title">Quick Actions</h2>
-                  </div>
-                  <div className="quick-action-grid">
-                    <div className="quick-action-card" onClick={() => handleAdd('student')}>
-                      <div className="quick-action-icon">👤</div>
-                      <div className="quick-action-title">Add Student</div>
-                    </div>
-                    <div className="quick-action-card" onClick={() => handleAdd('teacher')}>
-                      <div className="quick-action-icon">👨‍🏫</div>
-                      <div className="quick-action-title">Add Teacher</div>
-                    </div>
-                    <div className="quick-action-card" onClick={() => handleAdd('course')}>
-                      <div className="quick-action-icon">📚</div>
-                      <div className="quick-action-title">Add Course</div>
-                    </div>
-                    <div className="quick-action-card" onClick={() => setActiveSection('notifications')}>
-                      <div className="quick-action-icon">🔔</div>
-                      <div className="quick-action-title">Send Notification</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STUDENTS SECTION */}
-        {activeSection === 'students' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Students</span>
-                </div>
-                <h1 className="page-title">Student Management</h1>
-              </div>
-              <button onClick={() => handleAdd('student')} className="btn btn-primary">
-                <span>+</span> Add Student
+        <div className="content-wrapper">
+          {/* Top Header */}
+          <div className="top-header">
+            <div className="header-left">
+              <button 
+                className="mobile-menu-btn"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              >
+                ☰
               </button>
+              <div>
+                <h1 className="page-title">
+                  Admin Control Center
+                </h1>
+                <p className="page-subtitle">Manage your institution efficiently</p>
+              </div>
             </div>
 
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">All Students ({students.length})</h2>
+            <div className="header-right">
+              <div className="search-box">
+                <span className="search-icon">🔍</span>
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="Search students..."
+                  placeholder="Search anything..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
-              <div className="table-container">
-                <table>
+              <div className="user-profile" onClick={() => setShowUserMenu(!showUserMenu)}>
+                <div className="user-avatar">
+                  {user?.name?.charAt(0).toUpperCase() || 'A'}
+                </div>
+                <span className="user-name-text">{user?.name || 'Admin'}</span>
+                <span className="dropdown-icon">▼</span>
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <a href="/profile">Profile Settings</a>
+                    <hr />
+                    <button onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard View */}
+          {activeSection === 'dashboard' && (
+            <>
+              {/* Stats Row */}
+              <div className="stats-row">
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+                    👥
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.totalStudents}</h3>
+                    <p className="stat-label">Total Students</p>
+                    <div className="stat-trend positive">
+                      <span>↗</span>
+                      <span>+125 new this month</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4FD1C5, #38B2AC)' }}>
+                    👨‍🏫
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.totalTeachers}</h3>
+                    <p className="stat-label">Total Teachers</p>
+                    <div className="stat-trend positive">
+                      <span>↗</span>
+                      <span>+8 new this month</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                    📚
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.totalCourses}</h3>
+                    <p className="stat-label">Active Courses</p>
+                    <div className="stat-trend positive">
+                      <span>↗</span>
+                      <span>+3 new this semester</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B, #F97316)' }}>
+                    ✅
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.avgAttendance}%</h3>
+                    <p className="stat-label">Avg Attendance</p>
+                    <div className="stat-trend negative">
+                      <span>↘</span>
+                      <span>-2% from last week</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="dashboard-grid">
+                <div className="chart-card">
+                  <h2 className="section-title">📊 Weekly Overview</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={getChartData()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="students" fill="#1E3A8A" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="teachers" fill="#10B981" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="chart-card">
+                  <h2 className="section-title">📈 Attendance Trends</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={getChartData()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="students" stroke="#1E3A8A" strokeWidth={3} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="quick-actions-section">
+                <h2 className="section-title">⚡ Quick Actions</h2>
+                <div className="quick-actions-grid">
+                  <button className="action-card" onClick={() => openModal('student')}>
+                    <span className="action-icon">➕</span>
+                    <span>Add Student</span>
+                  </button>
+                  <button className="action-card" onClick={() => openModal('teacher')}>
+                    <span className="action-icon">➕</span>
+                    <span>Add Teacher</span>
+                  </button>
+                  <button className="action-card" onClick={() => openModal('course')}>
+                    <span className="action-icon">➕</span>
+                    <span>Add Course</span>
+                  </button>
+                  <button className="action-card" onClick={() => openModal('subject')}>
+                    <span className="action-icon">➕</span>
+                    <span>Add Subject</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Students View */}
+          {activeSection === 'students' && (
+            <div className="data-section">
+              <div className="section-header-with-action">
+                <h2 className="section-title">👥 Students Management</h2>
+                <button className="add-btn" onClick={() => openModal('student')}>
+                  ➕ Add Student
+                </button>
+              </div>
+
+              <div className="data-table-container">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
                       <th>Name</th>
                       <th>Email</th>
                       <th>Enrolled Courses</th>
@@ -687,33 +467,28 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {students.filter(s => 
-                      s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      s.email?.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).map((student, idx) => (
-                      <tr key={student._id || idx}>
-                        <td>#{student._id?.slice(-6) || idx + 1}</td>
-                        <td>{student.name}</td>
-                        <td>{student.email}</td>
-                        <td>{student.enrolledCourses?.length || 0}</td>
-                        <td>
-                          <span className={`badge badge-${student.status === 'active' ? 'success' : 'warning'}`}>
-                            {student.status || 'active'}
-                          </span>
-                        </td>
-                        <td>
-                          <button onClick={() => handleEdit('student', student)} className="action-btn btn-secondary">
-                            ✏️ Edit
-                          </button>
-                          <button onClick={() => handleDelete('students', student._id)} className="action-btn btn-danger">
-                            🗑️ Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {students.length === 0 && (
+                    {students.length > 0 ? (
+                      students.map((student) => (
+                        <tr key={student._id}>
+                          <td>{student.name}</td>
+                          <td>{student.email}</td>
+                          <td>{student.enrolledCourses?.length || 0}</td>
+                          <td>
+                            <span className="status-badge active">Active</span>
+                          </td>
+                          <td>
+                            <button className="table-btn edit" onClick={() => openModal('student', student)}>
+                              ✏️
+                            </button>
+                            <button className="table-btn delete" onClick={() => handleDelete('students', student._id, student.name)}>
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
                           No students found
                         </td>
                       </tr>
@@ -722,78 +497,52 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* TEACHERS SECTION */}
-        {activeSection === 'teachers' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Teachers</span>
-                </div>
-                <h1 className="page-title">Teacher Management</h1>
-              </div>
-              <button onClick={() => handleAdd('teacher')} className="btn btn-primary">
-                <span>+</span> Add Teacher
-              </button>
-            </div>
-
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">All Teachers ({teachers.length})</h2>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search teachers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          {/* Teachers View */}
+          {activeSection === 'teachers' && (
+            <div className="data-section">
+              <div className="section-header-with-action">
+                <h2 className="section-title">🎓 Teachers Management</h2>
+                <button className="add-btn" onClick={() => openModal('teacher')}>
+                  ➕ Add Teacher
+                </button>
               </div>
 
-              <div className="table-container">
-                <table>
+              <div className="data-table-container">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th>ID</th>
                       <th>Name</th>
                       <th>Email</th>
-                      <th>Courses Teaching</th>
-                      <th>Students</th>
+                      <th>Courses</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {teachers.filter(t => 
-                      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      t.email?.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).map((teacher, idx) => (
-                      <tr key={teacher._id || idx}>
-                        <td>#{teacher._id?.slice(-6) || idx + 1}</td>
-                        <td>{teacher.name}</td>
-                        <td>{teacher.email}</td>
-                        <td>{teacher.courses?.length || 0}</td>
-                        <td>{teacher.totalStudents || 0}</td>
-                        <td>
-                          <span className={`badge badge-${teacher.status === 'active' ? 'success' : 'warning'}`}>
-                            {teacher.status || 'active'}
-                          </span>
-                        </td>
-                        <td>
-                          <button onClick={() => handleEdit('teacher', teacher)} className="action-btn btn-secondary">
-                            ✏️ Edit
-                          </button>
-                          <button onClick={() => handleDelete('teachers', teacher._id)} className="action-btn btn-danger">
-                            🗑️ Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {teachers.length === 0 && (
+                    {teachers.length > 0 ? (
+                      teachers.map((teacher) => (
+                        <tr key={teacher._id}>
+                          <td>{teacher.name}</td>
+                          <td>{teacher.email}</td>
+                          <td>{teacher.courses?.length || 0}</td>
+                          <td>
+                            <span className="status-badge active">Active</span>
+                          </td>
+                          <td>
+                            <button className="table-btn edit" onClick={() => openModal('teacher', teacher)}>
+                              ✏️
+                            </button>
+                            <button className="table-btn delete" onClick={() => handleDelete('teachers', teacher._id, teacher.name)}>
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
                           No teachers found
                         </td>
                       </tr>
@@ -802,91 +551,98 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* COURSES SECTION */}
-        {activeSection === 'courses' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Courses</span>
-                </div>
-                <h1 className="page-title">Course Management</h1>
+          {/* Courses View */}
+          {activeSection === 'courses' && (
+            <div className="data-section">
+              <div className="section-header-with-action">
+                <h2 className="section-title">📚 Courses Management</h2>
+                <button className="add-btn" onClick={() => openModal('course')}>
+                  ➕ Add Course
+                </button>
               </div>
-              <button onClick={() => handleAdd('course')} className="btn btn-primary">
-                <span>+</span> Add Course
-              </button>
+
+              <div className="courses-grid">
+                {courses.length > 0 ? (
+                  courses.map((course) => (
+                    <div key={course._id} className="course-card">
+                      <div className="course-image">
+                        <img 
+                          src={course.thumbnail || `https://source.unsplash.com/400x250/?${course.category},education`}
+                          alt={course.title}
+                        />
+                      </div>
+                      <div className="course-body">
+                        <h3 className="course-title">{course.title}</h3>
+                        <p className="course-desc">{course.description?.substring(0, 80)}...</p>
+                        <div className="course-footer">
+                          <button className="edit-btn" onClick={() => openModal('course', course)}>
+                            ✏️ Edit
+                          </button>
+                          <button className="delete-btn" onClick={() => handleDelete('courses', course._id, course.title)}>
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">📚</div>
+                    <h3>No Courses Yet</h3>
+                    <p>Add courses to get started</p>
+                  </div>
+                )}
+              </div>
             </div>
+          )}
 
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">All Courses ({courses.length})</h2>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search courses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          {/* Subjects View */}
+          {activeSection === 'subjects' && (
+            <div className="data-section">
+              <div className="section-header-with-action">
+                <h2 className="section-title">📖 Subjects Management</h2>
+                <button className="add-btn" onClick={() => openModal('subject')}>
+                  ➕ Add Subject
+                </button>
               </div>
 
-              <div className="table-container">
-                <table>
+              <div className="data-table-container">
+                <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Course</th>
-                      <th>Teacher</th>
-                      <th>Category</th>
-                      <th>Students</th>
-                      <th>Price</th>
+                      <th>Subject Name</th>
+                      <th>Code</th>
+                      <th>Department</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {courses.filter(c => 
-                      c.title?.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).map((course, idx) => (
-                      <tr key={course._id || idx}>
-                        <td>{course.title}</td>
-                        <td>{course.teacher?.name || 'N/A'}</td>
-                        <td>{course.category}</td>
-                        <td>{course.enrolledStudents?.length || 0}</td>
-                        <td>₹{course.price}</td>
-                        <td>
-                          <span className={`badge badge-${
-                            course.status === 'published' ? 'success' : 
-                            course.status === 'pending' ? 'warning' : 'danger'
-                          }`}>
-                            {course.status}
-                          </span>
-                        </td>
-                        <td>
-                          {course.status === 'pending' && (
-                            <>
-                              <button onClick={() => handleApprove('courses', course._id)} className="action-btn btn-success">
-                                ✓ Approve
-                              </button>
-                              <button onClick={() => handleReject('courses', course._id)} className="action-btn btn-danger">
-                                ✗ Reject
-                              </button>
-                            </>
-                          )}
-                          <button onClick={() => handleEdit('course', course)} className="action-btn btn-secondary">
-                            ✏️ Edit
-                          </button>
-                          <button onClick={() => handleDelete('courses', course._id)} className="action-btn btn-danger">
-                            🗑️ Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {courses.length === 0 && (
+                    {subjects.length > 0 ? (
+                      subjects.map((subject) => (
+                        <tr key={subject._id}>
+                          <td>{subject.name}</td>
+                          <td>{subject.code || 'N/A'}</td>
+                          <td>{subject.department || 'General'}</td>
+                          <td>
+                            <span className="status-badge active">Active</span>
+                          </td>
+                          <td>
+                            <button className="table-btn edit" onClick={() => openModal('subject', subject)}>
+                              ✏️
+                            </button>
+                            <button className="table-btn delete" onClick={() => handleDelete('subjects', subject._id, subject.name)}>
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
-                          No courses found
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                          No subjects found
                         </td>
                       </tr>
                     )}
@@ -894,143 +650,75 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* SUBJECTS SECTION */}
-        {activeSection === 'subjects' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Subjects</span>
-                </div>
-                <h1 className="page-title">Subject Management</h1>
-              </div>
-              <button onClick={() => handleAdd('subject')} className="btn btn-primary">
-                <span>+</span> Add Subject
-              </button>
-            </div>
-
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">All Subjects ({subjects.length})</h2>
-              </div>
-
-              <div className="subjects-grid">
-                {subjects.map((subject, idx) => (
-                  <div key={subject._id || idx} className="subject-card">
-                    <div className="subject-icon">{subject.icon || '📖'}</div>
-                    <h3>{subject.name}</h3>
-                    <p>{subject.description}</p>
-                    <div className="subject-meta">
-                      <span>{subject.courseCount || 0} Courses</span>
-                      <span>{subject.students || 0} Students</span>
-                    </div>
-                    <div className="subject-actions">
-                      <button onClick={() => handleEdit('subject', subject)} className="action-btn btn-secondary">
-                        ✏️ Edit
-                      </button>
-                      <button onClick={() => handleDelete('subjects', subject._id)} className="action-btn btn-danger">
-                        🗑️ Delete
-                      </button>
-                    </div>
+          {/* Attendance View */}
+          {activeSection === 'attendance' && (
+            <div className="data-section">
+              <h2 className="section-title">✅ Attendance Management</h2>
+              
+              <div className="stats-row" style={{ marginTop: '1.5rem' }}>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                    ✅
                   </div>
-                ))}
-                {subjects.length === 0 && (
-                  <div className="empty-state">
-                    <div className="empty-icon">📖</div>
-                    <h3>No Subjects</h3>
-                    <p>Add subjects to organize courses</p>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{attendance.filter(a => a.status === 'present').length}</h3>
+                    <p className="stat-label">Present Today</p>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TIMETABLE SECTION */}
-        {activeSection === 'timetable' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Timetable</span>
                 </div>
-                <h1 className="page-title">Class Schedule</h1>
-              </div>
-              <button onClick={() => handleAdd('class')} className="btn btn-primary">
-                <span>+</span> Add Class
-              </button>
-            </div>
 
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">Weekly Schedule</h2>
-              </div>
-              <div className="timetable-grid">
-                <p className="empty-text">Timetable functionality - Coming soon!</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ATTENDANCE SECTION */}
-        {activeSection === 'attendance' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Attendance</span>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}>
+                    ❌
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{attendance.filter(a => a.status === 'absent').length}</h3>
+                    <p className="stat-label">Absent Today</p>
+                  </div>
                 </div>
-                <h1 className="page-title">Attendance Overview</h1>
-              </div>
-            </div>
 
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">Attendance Records</h2>
-                <select className="form-select">
-                  <option>Today</option>
-                  <option>This Week</option>
-                  <option>This Month</option>
-                </select>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B, #F97316)' }}>
+                    📊
+                  </div>
+                  <div className="stat-info">
+                    <h3 className="stat-value">{stats.avgAttendance}%</h3>
+                    <p className="stat-label">Average Rate</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="table-container">
-                <table>
+              <div className="data-table-container" style={{ marginTop: '2rem' }}>
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>Date</th>
+                      <th>Student</th>
                       <th>Course</th>
-                      <th>Total Students</th>
-                      <th>Present</th>
-                      <th>Absent</th>
-                      <th>Attendance %</th>
+                      <th>Status</th>
+                      <th>Marked By</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {attendance.map((record, idx) => (
-                      <tr key={idx}>
-                        <td>{new Date(record.date).toLocaleDateString()}</td>
-                        <td>{record.course?.title}</td>
-                        <td>{record.totalStudents}</td>
-                        <td className="text-success">{record.present}</td>
-                        <td className="text-danger">{record.absent}</td>
-                        <td>
-                          <span className={`badge badge-${
-                            record.percentage >= 75 ? 'success' : 
-                            record.percentage >= 50 ? 'warning' : 'danger'
-                          }`}>
-                            {record.percentage}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {attendance.length === 0 && (
+                    {attendance.length > 0 ? (
+                      attendance.slice(0, 20).map((record, idx) => (
+                        <tr key={idx}>
+                          <td>{new Date(record.date).toLocaleDateString()}</td>
+                          <td>{record.studentName || 'Student'}</td>
+                          <td>{record.courseName || 'Course'}</td>
+                          <td>
+                            <span className={`status-badge ${record.status === 'present' ? 'active' : 'inactive'}`}>
+                              {record.status}
+                            </span>
+                          </td>
+                          <td>{record.markedBy || 'System'}</td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
-                          No attendance records
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                          No attendance records found
                         </td>
                       </tr>
                     )}
@@ -1038,288 +726,185 @@ const AdminDashboard = () => {
                 </table>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* NOTIFICATIONS SECTION */}
-        {activeSection === 'notifications' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Notifications</span>
-                </div>
-                <h1 className="page-title">Notification Center</h1>
-              </div>
-            </div>
-
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">Send Broadcast</h2>
-              </div>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const message = e.target.message.value;
-                handleBroadcastNotification(message);
-                e.target.reset();
-              }}>
-                <div className="form-group">
-                  <label className="form-label">Message</label>
-                  <textarea 
-                    name="message"
-                    className="form-textarea"
-                    placeholder="Enter your message..."
-                    required
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  📢 Send to All Users
+          {/* Notifications View */}
+          {activeSection === 'notifications' && (
+            <div className="data-section">
+              <div className="section-header-with-action">
+                <h2 className="section-title">🔔 Notifications</h2>
+                <button className="add-btn" onClick={() => openModal('notification')}>
+                  ➕ Send Notification
                 </button>
-              </form>
-            </div>
-
-            <div className="content-card">
-              <div className="card-header">
-                <h2 className="card-title">Recent Notifications</h2>
               </div>
+
               <div className="notifications-list">
-                {notifications.map((notif, idx) => (
-                  <div key={idx} className="notification-item">
-                    <div className="notification-icon">📢</div>
-                    <div className="notification-content">
-                      <div className="notification-message">{notif.message}</div>
-                      <div className="notification-time">
-                        {new Date(notif.createdAt).toLocaleString()}
+                {notifications.length > 0 ? (
+                  notifications.map((notification, idx) => (
+                    <div key={idx} className="notification-card">
+                      <div className="notification-icon">🔔</div>
+                      <div className="notification-content">
+                        <h4>{notification.title}</h4>
+                        <p>{notification.message}</p>
+                        <span className="notification-time">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </span>
                       </div>
+                      <button className="table-btn delete" onClick={() => handleDelete('notifications', notification._id, notification.title)}>
+                        🗑️
+                      </button>
                     </div>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">🔔</div>
+                    <h3>No Notifications</h3>
+                    <p>Send notifications to keep everyone informed</p>
                   </div>
-                ))}
-                {notifications.length === 0 && (
-                  <p className="empty-text">No notifications sent yet</p>
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* REPORTS SECTION */}
-        {activeSection === 'reports' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Reports</span>
+          {/* Reports View */}
+          {activeSection === 'reports' && (
+            <div className="data-section">
+              <h2 className="section-title">📈 Reports & Analytics</h2>
+              
+              <div className="reports-grid">
+                <div className="report-card">
+                  <div className="report-icon">👥</div>
+                  <h3>Student Report</h3>
+                  <p>Detailed student performance and enrollment data</p>
+                  <button className="report-btn">Generate Report</button>
                 </div>
-                <h1 className="page-title">Analytics & Reports</h1>
-              </div>
-              <button onClick={() => toast.success('Report downloaded!')} className="btn btn-primary">
-                📥 Download Report
-              </button>
-            </div>
 
-            <div className="reports-grid">
-              <div className="report-card">
-                <h3>📊 User Analytics</h3>
-                <p>Detailed user growth and engagement reports</p>
-                <button className="btn btn-secondary">Generate Report</button>
-              </div>
-              <div className="report-card">
-                <h3>💰 Revenue Report</h3>
-                <p>Financial analytics and revenue tracking</p>
-                <button className="btn btn-secondary">Generate Report</button>
-              </div>
-              <div className="report-card">
-                <h3>📚 Course Performance</h3>
-                <p>Course enrollment and completion rates</p>
-                <button className="btn btn-secondary">Generate Report</button>
-              </div>
-              <div className="report-card">
-                <h3>📅 Attendance Report</h3>
-                <p>Student and teacher attendance summary</p>
-                <button className="btn btn-secondary">Generate Report</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SETTINGS SECTION */}
-        {activeSection === 'settings' && (
-          <div className="section">
-            <div className="header">
-              <div>
-                <div className="breadcrumb">
-                  <span>Admin</span> / <span className="breadcrumb-current">Settings</span>
+                <div className="report-card">
+                  <div className="report-icon">🎓</div>
+                  <h3>Teacher Report</h3>
+                  <p>Teacher activity and course statistics</p>
+                  <button className="report-btn">Generate Report</button>
                 </div>
-                <h1 className="page-title">System Settings</h1>
-              </div>
-            </div>
 
-            <div className="settings-grid">
-              <div className="content-card">
-                <h2 className="card-title">General Settings</h2>
-                <div className="form-group">
-                  <label className="form-label">Site Name</label>
-                  <input type="text" className="form-input" defaultValue="EduVillage" />
+                <div className="report-card">
+                  <div className="report-icon">📚</div>
+                  <h3>Course Report</h3>
+                  <p>Course enrollment and completion rates</p>
+                  <button className="report-btn">Generate Report</button>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Admin Email</label>
-                  <input type="email" className="form-input" defaultValue="admin@eduvillage.com" />
-                </div>
-                <button className="btn btn-primary">Save Changes</button>
-              </div>
 
-              <div className="content-card">
-                <h2 className="card-title">System Health</h2>
-                <div className="health-metrics">
-                  <div className="health-item">
-                    <span>Database</span>
-                    <span className="badge badge-success">Healthy</span>
-                  </div>
-                  <div className="health-item">
-                    <span>API Status</span>
-                    <span className="badge badge-success">Online</span>
-                  </div>
-                  <div className="health-item">
-                    <span>Storage</span>
-                    <span className="badge badge-warning">78% Used</span>
-                  </div>
-                  <div className="health-item">
-                    <span>Backup</span>
-                    <span className="badge badge-success">Up to date</span>
-                  </div>
+                <div className="report-card">
+                  <div className="report-icon">✅</div>
+                  <h3>Attendance Report</h3>
+                  <p>Comprehensive attendance tracking data</p>
+                  <button className="report-btn">Generate Report</button>
+                </div>
+
+                <div className="report-card">
+                  <div className="report-icon">💰</div>
+                  <h3>Financial Report</h3>
+                  <p>Revenue and payment analytics</p>
+                  <button className="report-btn">Generate Report</button>
+                </div>
+
+                <div className="report-card">
+                  <div className="report-icon">📊</div>
+                  <h3>Custom Report</h3>
+                  <p>Build your own custom reports</p>
+                  <button className="report-btn">Create Report</button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Settings View */}
+          {activeSection === 'settings' && (
+            <div className="data-section">
+              <h2 className="section-title">⚙️ System Settings</h2>
+              
+              <div className="settings-sections">
+                <div className="settings-card">
+                  <h3>🏫 Institution Settings</h3>
+                  <div className="settings-group">
+                    <label>Institution Name</label>
+                    <input type="text" className="settings-input" placeholder="EduVillage Learning Center" />
+                  </div>
+                  <div className="settings-group">
+                    <label>Email</label>
+                    <input type="email" className="settings-input" placeholder="admin@eduvillage.com" />
+                  </div>
+                  <div className="settings-group">
+                    <label>Phone</label>
+                    <input type="tel" className="settings-input" placeholder="+91 1234567890" />
+                  </div>
+                  <button className="save-settings-btn">Save Changes</button>
+                </div>
+
+                <div className="settings-card">
+                  <h3>🔐 Security Settings</h3>
+                  <div className="settings-group">
+                    <label>Two-Factor Authentication</label>
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="2fa" />
+                      <label htmlFor="2fa"></label>
+                    </div>
+                  </div>
+                  <div className="settings-group">
+                    <label>Session Timeout (minutes)</label>
+                    <input type="number" className="settings-input" placeholder="30" />
+                  </div>
+                  <button className="save-settings-btn">Save Changes</button>
+                </div>
+
+                <div className="settings-card">
+                  <h3>📧 Email Settings</h3>
+                  <div className="settings-group">
+                    <label>Enable Email Notifications</label>
+                    <div className="toggle-switch">
+                      <input type="checkbox" id="email-notif" defaultChecked />
+                      <label htmlFor="email-notif"></label>
+                    </div>
+                  </div>
+                  <div className="settings-group">
+                    <label>SMTP Server</label>
+                    <input type="text" className="settings-input" placeholder="smtp.gmail.com" />
+                  </div>
+                  <button className="save-settings-btn">Save Changes</button>
+                </div>
+
+                <div className="settings-card">
+                  <h3>🎨 Appearance Settings</h3>
+                  <div className="settings-group">
+                    <label>Theme</label>
+                    <select className="settings-input">
+                      <option>Light</option>
+                      <option>Dark</option>
+                      <option>Auto</option>
+                    </select>
+                  </div>
+                  <div className="settings-group">
+                    <label>Primary Color</label>
+                    <input type="color" className="settings-input" value="#1E3A8A" />
+                  </div>
+                  <button className="save-settings-btn">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal */}
       {showModal && (
-        <div className="modal active">
-          <div className="modal-content">
+        <div className="modal-backdrop" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">
-                {selectedItem ? 'Edit' : 'Add'} {modalType}
-              </h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
+              <h2>{selectedItem ? 'Edit' : 'Add'} {modalType}</h2>
+              <button className="close-btn" onClick={closeModal}>×</button>
             </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                {modalType === 'student' || modalType === 'teacher' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.name || ''}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Email</label>
-                      <input
-                        type="email"
-                        className="form-input"
-                        value={formData.email || ''}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                    {!selectedItem && (
-                      <div className="form-group">
-                        <label className="form-label">Password</label>
-                        <input
-                          type="password"
-                          className="form-input"
-                          value={formData.password || ''}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : modalType === 'course' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Course Title</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.title || ''}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-textarea"
-                        value={formData.description || ''}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Category</label>
-                      <select
-                        className="form-select"
-                        value={formData.category || 'Programming'}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      >
-                        <option value="Programming">Programming</option>
-                        <option value="Design">Design</option>
-                        <option value="Business">Business</option>
-                        <option value="Marketing">Marketing</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Price (₹)</label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        value={formData.price || ''}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </>
-                ) : modalType === 'subject' ? (
-                  <>
-                    <div className="form-group">
-                      <label className="form-label">Subject Name</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={formData.name || ''}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label">Description</label>
-                      <textarea
-                        className="form-textarea"
-                        value={formData.description || ''}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      />
-                    </div>
-                  </>
-                ) : null}
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {selectedItem ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
+            <div className="modal-body">
+              <p>Form implementation for {modalType} management</p>
+            </div>
           </div>
         </div>
       )}

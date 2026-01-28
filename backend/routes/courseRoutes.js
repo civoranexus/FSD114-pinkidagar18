@@ -6,19 +6,31 @@ const {
   createCourse,
   updateCourse,
   deleteCourse,
-  enrollCourse,
-  getTeacherCourses,
-  getEnrolledCourses
+  getMyCourses,
+  getCourseStudents,
+  getCourseMaterials
 } = require('../controllers/courseController');
 const { protect, authorize } = require('../middleware/auth');
 
+// Public routes
 router.get('/', getAllCourses);
-router.get('/:id', getCourse);
-router.post('/:id/enroll', protect, authorize('student'), enrollCourse);
-router.get('/student/enrolled', protect, authorize('student'), getEnrolledCourses);
-router.get('/teacher/my-courses', protect, authorize('teacher', 'admin'), getTeacherCourses);
+
+// Protected routes - IMPORTANT: Specific routes must come BEFORE parameterized routes (:id)
+// Teacher routes
+router.get('/my-courses', protect, authorize('teacher', 'admin'), getMyCourses);
+
+// Student routes  
+router.get('/materials/:courseId', protect, authorize('student'), getCourseMaterials);
+
+// Course management (Teacher/Admin)
 router.post('/', protect, authorize('teacher', 'admin'), createCourse);
+
+// Single course routes - MUST come after specific routes
+router.get('/:id', getCourse);
 router.put('/:id', protect, authorize('teacher', 'admin'), updateCourse);
 router.delete('/:id', protect, authorize('teacher', 'admin'), deleteCourse);
+
+// Course students (Teacher/Admin)
+router.get('/:id/students', protect, authorize('teacher', 'admin'), getCourseStudents);
 
 module.exports = router;
