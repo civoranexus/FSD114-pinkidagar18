@@ -39,10 +39,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  // Courses the student is enrolled in
   enrolledCourses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course'
   }],
+  // Courses created by the teacher
   createdCourses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course'
@@ -53,11 +55,48 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  // Additional fields for enhanced functionality
+  dateOfBirth: {
+    type: Date
+  },
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    country: String,
+    zipCode: String
+  },
+  socialLinks: {
+    linkedin: String,
+    github: String,
+    twitter: String,
+    website: String
+  },
+  // Teacher-specific fields
+  expertise: [{
+    type: String
+  }],
+  experience: {
+    type: Number, // years of experience
+    default: 0
+  },
+  // Notification preferences
+  notifications: {
+    email: {
+      type: Boolean,
+      default: true
+    },
+    push: {
+      type: Boolean,
+      default: true
+    }
   }
 }, {
   timestamps: true
 });
 
+// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -68,14 +107,21 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+// Compare password method
 userSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Remove password from JSON output
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
   return obj;
 };
+
+// Virtual for full name formatting
+userSchema.virtual('fullName').get(function() {
+  return this.name;
+});
 
 module.exports = mongoose.model('User', userSchema);

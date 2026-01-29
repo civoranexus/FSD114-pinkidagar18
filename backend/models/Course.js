@@ -12,7 +12,7 @@ const lessonSchema = new mongoose.Schema({
   },
   contentType: {
     type: String,
-    enum: ['video', 'text', 'pdf', 'link'],
+    enum: ['video', 'text', 'pdf', 'link', 'quiz', 'assignment'],
     required: true
   },
   contentUrl: {
@@ -21,7 +21,7 @@ const lessonSchema = new mongoose.Schema({
   },
   duration: {
     type: Number,
-    default: 0
+    default: 0 // in minutes
   },
   order: {
     type: Number,
@@ -30,7 +30,13 @@ const lessonSchema = new mongoose.Schema({
   isFree: {
     type: Boolean,
     default: false
-  }
+  },
+  // Additional resources for the lesson
+  resources: [{
+    title: String,
+    url: String,
+    type: String // pdf, link, video, etc.
+  }]
 }, { timestamps: true });
 
 const moduleSchema = new mongoose.Schema({
@@ -70,6 +76,9 @@ const courseSchema = new mongoose.Schema({
     type: String,
     default: 'default-course.png'
   },
+  coverImage: {
+    type: String
+  },
   category: {
     type: String,
     required: true,
@@ -86,6 +95,8 @@ const courseSchema = new mongoose.Schema({
     required: true
   },
   modules: [moduleSchema],
+  
+  // Pricing
   price: {
     type: Number,
     default: 0
@@ -94,13 +105,19 @@ const courseSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  discountPrice: {
+    type: Number
+  },
+  
+  // Students enrolled in this course
   enrolledStudents: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  
   totalDuration: {
     type: Number,
-    default: 0
+    default: 0 // in minutes
   },
   language: {
     type: String,
@@ -116,11 +133,30 @@ const courseSchema = new mongoose.Schema({
   learningOutcomes: [{
     type: String
   }],
+  
+  // Course materials and resources
+  materials: [{
+    title: String,
+    description: String,
+    url: String,
+    type: String, // pdf, video, link, etc.
+    size: String
+  }],
+  
+  resources: [{
+    title: String,
+    description: String,
+    url: String,
+    type: String
+  }],
+  
   status: {
     type: String,
     enum: ['draft', 'published', 'archived'],
     default: 'draft'
   },
+  
+  // Rating and reviews
   rating: {
     average: {
       type: Number,
@@ -132,11 +168,49 @@ const courseSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
+  },
+  
+  // Course statistics
+  stats: {
+    totalEnrollments: {
+      type: Number,
+      default: 0
+    },
+    totalCompletions: {
+      type: Number,
+      default: 0
+    },
+    completionRate: {
+      type: Number,
+      default: 0
+    }
+  },
+  
+  // SEO and metadata
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  metaDescription: {
+    type: String
+  },
+  metaKeywords: [{
+    type: String
+  }],
+  
+  // Publishing dates
+  publishedAt: {
+    type: Date
+  },
+  lastUpdatedAt: {
+    type: Date
   }
 }, {
   timestamps: true
 });
 
+// Calculate total duration before saving
 courseSchema.pre('save', function(next) {
   let totalDuration = 0;
   this.modules.forEach(module => {
@@ -145,7 +219,38 @@ courseSchema.pre('save', function(next) {
     });
   });
   this.totalDuration = totalDuration;
+  
+  // Update stats
+  this.stats.totalEnrollments = this.enrolledStudents.length;
+  
   next();
 });
+
+// Generate slug from title
+courseSchema.pre('save', function(next) {
+  if (this.isModified('title') && !this.slug) {
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  }
+  next();
+});
+
+// Update publishedAt when status changes to published
+courseSchema.pre('save', function(next) {
+  if (this.isModified('status') && this.status === 'published' && !this.publishedAt) {
+    this.publishedAt = new Date();
+  }
+  next();
+});
+
+// Indexes for better query performance
+courseSchema.index({ title: 'text', description: 'text' });
+courseSchema.index({ category: 1, level: 1 });
+courseSchema.index({ instructor: 1 });
+courseSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Course', courseSchema);

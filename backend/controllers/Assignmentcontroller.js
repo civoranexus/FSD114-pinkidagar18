@@ -1,6 +1,7 @@
 const Assignment = require('../models/Assignment');
 const Course = require('../models/Course');
 const Submission = require('../models/Submission');
+const User = require('../models/User');
 
 // @desc    Create assignment
 // @route   POST /api/assignments
