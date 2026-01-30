@@ -8,16 +8,18 @@ const {
   deleteCourse,
   getMyCourses,
   getCourseStudents,
-  getCourseMaterials
+  getCourseMaterials,
+  getTeacherStats
 } = require('../controllers/courseController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, attachUser } = require('../middleware/auth');
 
 // Public routes
-router.get('/', getAllCourses);
+router.get('/', attachUser, getAllCourses);
 
 // Protected routes - IMPORTANT: Specific routes must come BEFORE parameterized routes (:id)
 // Teacher routes
 router.get('/my-courses', protect, authorize('teacher', 'admin'), getMyCourses);
+router.get('/teacher/stats', protect, authorize('teacher'), getTeacherStats);
 
 // Student routes  
 router.get('/materials/:courseId', protect, authorize('student'), getCourseMaterials);

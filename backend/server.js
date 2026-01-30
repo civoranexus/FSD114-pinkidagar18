@@ -78,11 +78,13 @@ const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const progressRoutes = require('./routes/progressRoutes');
-const assignmentRoutes = require('./routes/assignmentRoutes');
+const assignmentRoutes = require('./routes/Assignmentroutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const classRoutes = require('./routes/classRoutes');
 const adminRoutes = require('./routes/adminroutes');
+const aiRoutes = require('./routes/aiRoutes');
+const teacherRoutes = require('./routes/TeacherRoutes');
 
 // Mount API routes
 app.use('/api/auth', authRoutes);
@@ -94,6 +96,8 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 // ===========================================
 // HEALTH CHECK & SYSTEM ENDPOINTS
@@ -135,7 +139,7 @@ app.get('/api', (req, res) => {
 // Cache statistics endpoint (development only)
 if (process.env.NODE_ENV === 'development') {
   const { getCacheStats, clearCache } = require('./middleware/Cache');
-  
+
   app.get('/api/cache/stats', (req, res) => {
     const stats = getCacheStats();
     res.status(200).json({
@@ -198,7 +202,7 @@ const server = app.listen(PORT, () => {
 process.on('unhandledRejection', (err, promise) => {
   console.error('❌ Unhandled Promise Rejection:', err.message);
   console.error('Stack:', err.stack);
-  
+
   // Close server & exit process
   server.close(() => {
     console.log('🔴 Server closed due to unhandled promise rejection');
@@ -210,7 +214,7 @@ process.on('unhandledRejection', (err, promise) => {
 process.on('uncaughtException', (err) => {
   console.error('❌ Uncaught Exception:', err.message);
   console.error('Stack:', err.stack);
-  
+
   // Exit process
   console.log('🔴 Server shutting down due to uncaught exception');
   process.exit(1);
@@ -220,7 +224,7 @@ process.on('uncaughtException', (err) => {
 process.on('SIGTERM', () => {
   console.log('⚠️  SIGTERM signal received');
   console.log('🔴 Closing server gracefully...');
-  
+
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
@@ -231,7 +235,7 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   console.log('\n⚠️  SIGINT signal received (Ctrl+C)');
   console.log('🔴 Closing server gracefully...');
-  
+
   server.close(() => {
     console.log('✅ Server closed');
     process.exit(0);

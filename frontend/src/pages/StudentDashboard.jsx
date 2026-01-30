@@ -14,7 +14,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  
+
   // State Management
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
@@ -33,7 +33,12 @@ const StudentDashboard = () => {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  // AI Tutor State (ADDED)
+  const [aiChatMessages, setAiChatMessages] = useState([]);
+  const [aiChatInput, setAiChatInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const coursesPerPage = 6;
 
   const [stats, setStats] = useState({
@@ -69,7 +74,7 @@ const StudentDashboard = () => {
   const fetchStudentData = async () => {
     try {
       setLoading(true);
-      
+
       const { data: enrolledData } = await api.get('/enrollments/my-enrollments');
       const enrolled = enrolledData?.data || [];
       setEnrolledCourses(enrolled);
@@ -85,7 +90,7 @@ const StudentDashboard = () => {
       const coursesCompleted = enrolled.filter(e => e.progress === 100).length;
       const totalProgress = enrolled.reduce((sum, e) => sum + (e.progress || 0), 0);
       const averageProgress = enrolled.length > 0 ? (totalProgress / enrolled.length).toFixed(0) : 0;
-      
+
       const hoursLearned = enrolled.reduce((sum, e) => {
         const completedLessons = e.completedLessons?.length || 0;
         return sum + (completedLessons * 5 / 60);
@@ -114,10 +119,10 @@ const StudentDashboard = () => {
       const { data } = await api.get('/assignments/student/my-assignments');
       const assignmentsData = data?.data || [];
       setAssignments(assignmentsData);
-      
+
       const completed = assignmentsData.filter(a => a.status === 'submitted').length;
       const pending = assignmentsData.filter(a => a.status === 'pending').length;
-      
+
       setStats(prev => ({
         ...prev,
         assignmentsCompleted: completed,
@@ -133,11 +138,11 @@ const StudentDashboard = () => {
       const { data } = await api.get('/attendance/my-attendance');
       const records = data?.data || [];
       setAttendanceRecords(records);
-      
+
       const totalClasses = records.length;
       const presentClasses = records.filter(r => r.status === 'present').length;
       const attendanceRate = totalClasses > 0 ? ((presentClasses / totalClasses) * 100).toFixed(1) : 0;
-      
+
       setStats(prev => ({
         ...prev,
         attendanceRate
@@ -153,6 +158,18 @@ const StudentDashboard = () => {
       setUpcomingClasses(data?.data || []);
     } catch (error) {
       console.error('Error fetching classes:', error);
+    }
+  };
+
+  const handleJoinClass = async (classId) => {
+    try {
+      const { data } = await api.post(`/classes/${classId}/join`);
+      toast.success(`🚀 ${data.message}`);
+      if (data.data?.meetingLink) {
+        window.open(data.data.meetingLink, '_blank');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to join class');
     }
   };
 
@@ -174,10 +191,10 @@ const StudentDashboard = () => {
 
   const startFaceCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setIsCameraActive(true);
@@ -202,7 +219,7 @@ const StudentDashboard = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     const context = canvas.getContext('2d');
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
@@ -212,6 +229,11 @@ const StudentDashboard = () => {
       formData.append('image', blob, 'face-capture.jpg');
 
       try {
+        const formData = new FormData();
+        formData.append('image', blob, 'face-capture.jpg');
+        formData.append('courseId', selectedClass?.course?._id);
+        formData.append('classId', selectedClass?._id);
+
         await api.post('/attendance/mark-face', formData);
         toast.success('✅ Attendance marked successfully!');
         stopFaceCamera();
@@ -224,14 +246,30 @@ const StudentDashboard = () => {
 
   const startQRScanner = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setShowQRScanner(true);
         toast.info('📷 Point camera at QR code');
+
+        // SIMULATION: Automatically mark attendance after 3 seconds
+        setTimeout(async () => {
+          try {
+            await api.post('/attendance/mark-qr', {
+              qrCode: 'mock-qr-123',
+              courseId: selectedClass?.course?._id,
+              classId: selectedClass?._id
+            });
+            toast.success('✅ QR Code detected! Attendance marked.');
+            stopQRScanner();
+            fetchAttendance();
+          } catch (error) {
+            console.error('QR Mark error:', error);
+          }
+        }, 3000);
       }
     } catch (error) {
       toast.error('Failed to access camera');
@@ -261,6 +299,20 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleDownloadResource = (url, fileName) => {
+    if (!url) {
+      toast.info('📁 This resource is being prepared for download.');
+      return;
+    }
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || 'resource';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('📥 Download started!');
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -281,7 +333,7 @@ const StudentDashboard = () => {
 
   // Filtering & Pagination
   const categories = ['all', ...new Set(allCourses.map(c => c.category))];
-  
+
   const filteredCourses = (activeTab === 'enrolled' ? enrolledCourses : allCourses).filter(item => {
     const course = item.course || item;
     const matchesCategory = categoryFilter === 'all' || course.category === categoryFilter;
@@ -294,6 +346,40 @@ const StudentDashboard = () => {
     (currentPage - 1) * coursesPerPage,
     currentPage * coursesPerPage
   );
+
+  // AI Tutor Chat Handler (ADDED)
+  const handleAiChat = async () => {
+    if (!aiChatInput.trim() || aiLoading) return;
+
+    const userMessage = { role: 'user', content: aiChatInput };
+    setAiChatMessages(prev => [...prev, userMessage]);
+    setAiChatInput('');
+    setAiLoading(true);
+
+    try {
+      const { data } = await api.post('/ai/tutor', {
+        messages: [...aiChatMessages, userMessage]
+      });
+
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.data.text
+      };
+
+      setAiChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('AI Chat error:', error);
+      toast.error('Failed to get response from AI Tutor');
+      const errorMessage = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.'
+      };
+      setAiChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -315,61 +401,68 @@ const StudentDashboard = () => {
         </div>
 
         <nav className="sidebar-nav">
-          <div 
+          <div
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
             <span className="nav-icon">📊</span>
             <span className="nav-text">Dashboard</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'enrolled' ? 'active' : ''}`}
             onClick={() => setActiveTab('enrolled')}
           >
             <span className="nav-icon">📚</span>
             <span className="nav-text">My Courses</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'browse' ? 'active' : ''}`}
             onClick={() => setActiveTab('browse')}
           >
             <span className="nav-icon">🔍</span>
             <span className="nav-text">Browse Courses</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'assignments' ? 'active' : ''}`}
             onClick={() => setActiveTab('assignments')}
           >
             <span className="nav-icon">📝</span>
             <span className="nav-text">Assignments</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'attendance' ? 'active' : ''}`}
             onClick={() => setActiveTab('attendance')}
           >
             <span className="nav-icon">📋</span>
             <span className="nav-text">Attendance</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
             <span className="nav-icon">📈</span>
             <span className="nav-text">Analytics</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'certificates' ? 'active' : ''}`}
             onClick={() => setActiveTab('certificates')}
           >
             <span className="nav-icon">🏆</span>
             <span className="nav-text">Certificates</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`}
             onClick={() => setActiveTab('resources')}
           >
             <span className="nav-icon">📖</span>
             <span className="nav-text">Resources</span>
+          </div>
+          <div
+            className={`nav-item ${activeTab === 'ai-tutor' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ai-tutor')}
+          >
+            <span className="nav-icon">🤖</span>
+            <span className="nav-text">AI Tutor</span>
           </div>
         </nav>
 
@@ -387,7 +480,7 @@ const StudentDashboard = () => {
           {/* Top Header */}
           <div className="top-header">
             <div className="header-left">
-              <button 
+              <button
                 className="mobile-menu-btn"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
@@ -547,7 +640,35 @@ const StudentDashboard = () => {
                           {new Date(cls.date).toLocaleDateString()}
                         </div>
                         <h3 className="class-title">{cls.title}</h3>
-                        <p className="class-instructor">👨‍🏫 {cls.instructor}</p>
+                        <p className="class-instructor">👨‍🏫 {cls.instructor?.name || cls.instructor}</p>
+                        <div className="class-actions-row">
+                          <button
+                            className="join-btn"
+                            onClick={() => handleJoinClass(cls._id)}
+                          >
+                            🔗 Join Now
+                          </button>
+                        </div>
+                        <div className="class-actions-grid">
+                          <button
+                            className="attendance-btn face"
+                            onClick={() => {
+                              setSelectedClass(cls);
+                              startFaceCamera();
+                            }}
+                          >
+                            📸 Face Mark
+                          </button>
+                          <button
+                            className="attendance-btn qr"
+                            onClick={() => {
+                              setSelectedClass(cls);
+                              startQRScanner();
+                            }}
+                          >
+                            📷 QR Scan
+                          </button>
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -566,7 +687,7 @@ const StudentDashboard = () => {
           {activeTab === 'assignments' && (
             <div className="assignments-section">
               <h2 className="section-title">📝 My Assignments</h2>
-              
+
               <div className="assignments-stats">
                 <div className="assignment-stat">
                   <span className="stat-number">{stats.assignmentsPending}</span>
@@ -592,7 +713,7 @@ const StudentDashboard = () => {
                       <div className="assignment-footer">
                         <span className="due-date">📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
                         {assignment.status === 'pending' && (
-                          <button 
+                          <button
                             className="submit-btn"
                             onClick={() => {
                               setSelectedAssignment(assignment);
@@ -620,7 +741,7 @@ const StudentDashboard = () => {
           {activeTab === 'attendance' && (
             <div className="attendance-section">
               <h2 className="section-title">📋 My Attendance</h2>
-              
+
               <div className="attendance-actions">
                 <button className="action-btn primary" onClick={startFaceCamera}>
                   📸 Mark via Face Recognition
@@ -697,7 +818,7 @@ const StudentDashboard = () => {
           {activeTab === 'analytics' && (
             <div className="analytics-section">
               <h2 className="section-title">📈 Learning Analytics</h2>
-              
+
               <div className="analytics-grid">
                 <div className="chart-card">
                   <h3>Course Progress Over Time</h3>
@@ -752,7 +873,12 @@ const StudentDashboard = () => {
                       <div className="certificate-icon">🏆</div>
                       <h3>{cert.courseName}</h3>
                       <p>Issued: {new Date(cert.issuedDate).toLocaleDateString()}</p>
-                      <button className="download-btn">Download Certificate</button>
+                      <button
+                        className="download-btn"
+                        onClick={() => handleDownloadResource(cert.url, `${cert.courseName}_Certificate.pdf`)}
+                      >
+                        Download Certificate
+                      </button>
                     </div>
                   ))
                 ) : (
@@ -770,7 +896,7 @@ const StudentDashboard = () => {
           {activeTab === 'resources' && (
             <div className="resources-section">
               <h2 className="section-title">📖 Study Resources</h2>
-              
+
               <div className="resources-grid">
                 {enrolledCourses.map((enrollment, idx) => {
                   const course = enrollment.course;
@@ -786,7 +912,12 @@ const StudentDashboard = () => {
                             {module.lessons?.map((lesson, lIdx) => (
                               <div key={lIdx} className="resource-item">
                                 <span>📄 {lesson.title}</span>
-                                <button className="download-resource-btn">Download</button>
+                                <button
+                                  className="download-resource-btn"
+                                  onClick={() => handleDownloadResource(lesson.videoUrl || lesson.content, lesson.title)}
+                                >
+                                  Download
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -806,26 +937,140 @@ const StudentDashboard = () => {
             </div>
           )}
 
+          {/* AI Tutor Tab (ADDED) */}
+          {activeTab === 'ai-tutor' && (
+            <div className="ai-tutor-section">
+              <div className="ai-tutor-header">
+                <h2 className="section-title">🤖 AI Tutor - Your Personal Learning Assistant</h2>
+                <p className="section-subtitle">Ask me anything about your courses, assignments, or study topics!</p>
+              </div>
+
+              <div className="ai-chat-container">
+                <div className="ai-chat-messages">
+                  {aiChatMessages.length === 0 ? (
+                    <div className="ai-welcome">
+                      <div className="ai-welcome-icon">🤖</div>
+                      <h3>Welcome to AI Tutor!</h3>
+                      <p>I'm here to help you with:</p>
+                      <div className="ai-features">
+                        <div className="ai-feature-card">
+                          <span className="feature-icon">💡</span>
+                          <span>Explain concepts</span>
+                        </div>
+                        <div className="ai-feature-card">
+                          <span className="feature-icon">📝</span>
+                          <span>Help with assignments</span>
+                        </div>
+                        <div className="ai-feature-card">
+                          <span className="feature-icon">🎯</span>
+                          <span>Study tips & strategies</span>
+                        </div>
+                        <div className="ai-feature-card">
+                          <span className="feature-icon">❓</span>
+                          <span>Answer your questions</span>
+                        </div>
+                      </div>
+                      <p className="ai-prompt-text">Start by asking me a question below!</p>
+                    </div>
+                  ) : (
+                    <div className="ai-messages-list">
+                      {aiChatMessages.map((message, index) => (
+                        <div key={index} className={`ai-message ${message.role}`}>
+                          <div className="message-avatar">
+                            {message.role === 'user' ? (
+                              user?.name?.charAt(0).toUpperCase() || 'S'
+                            ) : (
+                              '🤖'
+                            )}
+                          </div>
+                          <div className="message-content">
+                            <div className="message-sender">
+                              {message.role === 'user' ? 'You' : 'AI Tutor'}
+                            </div>
+                            <div className="message-text">{message.content}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {aiLoading && (
+                        <div className="ai-message assistant">
+                          <div className="message-avatar">🤖</div>
+                          <div className="message-content">
+                            <div className="message-sender">AI Tutor</div>
+                            <div className="message-text typing-indicator">
+                              <span></span><span></span><span></span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="ai-chat-input-container">
+                  <div className="ai-chat-input-wrapper">
+                    <input
+                      type="text"
+                      className="ai-chat-input"
+                      placeholder="Ask me anything..."
+                      value={aiChatInput}
+                      onChange={(e) => setAiChatInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAiChat()}
+                      disabled={aiLoading}
+                    />
+                    <button
+                      className="ai-send-btn"
+                      onClick={handleAiChat}
+                      disabled={!aiChatInput.trim() || aiLoading}
+                    >
+                      {aiLoading ? '⏳' : '📤'}
+                    </button>
+                  </div>
+                  <div className="ai-suggestions">
+                    <button
+                      className="suggestion-chip"
+                      onClick={() => setAiChatInput('Explain the concept of variables in programming')}
+                    >
+                      Explain variables
+                    </button>
+                    <button
+                      className="suggestion-chip"
+                      onClick={() => setAiChatInput('Help me understand loops in programming')}
+                    >
+                      Help with loops
+                    </button>
+                    <button
+                      className="suggestion-chip"
+                      onClick={() => setAiChatInput('What are good study techniques for online learning?')}
+                    >
+                      Study techniques
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+
           {/* Courses Tabs (Enrolled & Browse) */}
           {(activeTab === 'enrolled' || activeTab === 'browse') && (
             <div className="courses-section">
               <div className="section-header">
                 <div className="tabs">
-                  <button 
+                  <button
                     className={`tab-btn ${activeTab === 'enrolled' ? 'active' : ''}`}
                     onClick={() => setActiveTab('enrolled')}
                   >
                     My Courses ({enrolledCourses.length})
                   </button>
-                  <button 
+                  <button
                     className={`tab-btn ${activeTab === 'browse' ? 'active' : ''}`}
                     onClick={() => setActiveTab('browse')}
                   >
                     Browse All
                   </button>
                 </div>
-                <select 
-                  value={categoryFilter} 
+                <select
+                  value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="category-filter"
                 >
@@ -859,7 +1104,7 @@ const StudentDashboard = () => {
                     return (
                       <div key={course._id || index} className="course-card">
                         <div className="course-image">
-                          <img 
+                          <img
                             src={course.thumbnail || `https://source.unsplash.com/400x250/?${course.category},education`}
                             alt={course.title}
                           />
@@ -905,8 +1150,8 @@ const StudentDashboard = () => {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="pagination">
-                  <button 
-                    className="page-btn arrow" 
+                  <button
+                    className="page-btn arrow"
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
                   >
@@ -922,7 +1167,7 @@ const StudentDashboard = () => {
                     </button>
                   ))}
                   {totalPages > 4 && <span className="page-dots">...</span>}
-                  <button 
+                  <button
                     className="page-btn arrow"
                     onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                     disabled={currentPage === totalPages}
@@ -948,8 +1193,8 @@ const StudentDashboard = () => {
               <h3>{selectedAssignment.title}</h3>
               <p>{selectedAssignment.description}</p>
               <div className="file-upload-area">
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   id="assignmentFile"
                   onChange={(e) => handleSubmitAssignment(selectedAssignment._id, e.target.files[0])}
                   style={{ display: 'none' }}

@@ -129,12 +129,14 @@ exports.markAttendance = async (req, res, next) => {
 // @access  Protected (Student)
 exports.verifyFaceAttendance = async (req, res, next) => {
   try {
-    const { imageData, courseId, classId } = req.body;
+    // multer puts non-file fields in req.body and the file in req.file
+    const { courseId, classId } = req.body;
+    const imageData = req.file;
 
     if (!imageData || !courseId || !classId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide imageData, courseId, and classId'
+        message: 'Please provide image, courseId, and classId'
       });
     }
 
@@ -196,12 +198,12 @@ exports.verifyFaceAttendance = async (req, res, next) => {
 // @access  Protected (Student)
 exports.verifyQRAttendance = async (req, res, next) => {
   try {
-    const { qrData, courseId, classId } = req.body;
+    const { qrCode, courseId, classId } = req.body;
 
-    if (!qrData || !courseId || !classId) {
+    if (!qrCode || !courseId || !classId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide qrData, courseId, and classId'
+        message: 'Please provide qrCode, courseId, and classId'
       });
     }
 
@@ -240,7 +242,7 @@ exports.verifyQRAttendance = async (req, res, next) => {
       verificationData: {
         type: 'qr',
         verified: true,
-        qrCode: qrData
+        qrCode: qrCode
       }
     });
 

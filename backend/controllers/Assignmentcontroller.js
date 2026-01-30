@@ -1,6 +1,6 @@
 const Assignment = require('../models/Assignment');
-const Course = require('../models/Course');
 const Submission = require('../models/Submission');
+const Course = require('../models/Course');
 const User = require('../models/User');
 
 // @desc    Create assignment
@@ -54,7 +54,7 @@ exports.createAssignment = async (req, res, next) => {
 exports.getAssignments = async (req, res, next) => {
   try {
     const course = await Course.findById(req.params.courseId);
-    
+
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -92,10 +92,10 @@ exports.getMyAssignments = async (req, res, next) => {
 
     // Get student's enrolled courses
     const user = await User.findById(req.user.id).select('enrolledCourses');
-    
+
     // Find assignments for enrolled courses
     const query = { course: { $in: user.enrolledCourses } };
-    
+
     const assignments = await Assignment.find(query)
       .populate('course', 'title')
       .sort('-createdAt');
@@ -168,7 +168,12 @@ exports.submitAssignment = async (req, res, next) => {
       });
     }
 
-    const { content, attachments } = req.body;
+    const { content } = req.body;
+    const attachments = req.file ? [{
+      name: req.file.originalname,
+      url: `/uploads/${req.file.filename || Date.now() + '-' + req.file.originalname}`,
+      type: req.file.mimetype
+    }] : req.body.attachments;
 
     const submission = await Submission.create({
       assignment: req.params.id,
@@ -260,6 +265,42 @@ exports.gradeAssignment = async (req, res, next) => {
   }
 };
 
+// @desc    Get submissions for an assignment
+// @route   GET /api/assignments/:id/submissions
+// @access  Protected (Teacher/Admin)
+exports.getAssignmentSubmissions = async (req, res, next) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id).populate('course');
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found'
+      });
+    }
+
+    // Check authorization
+    if (assignment.course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view submissions for this assignment'
+      });
+    }
+
+    const submissions = await Submission.find({ assignment: req.params.id })
+      .populate('student', 'name email profilePicture')
+      .sort('-submittedAt');
+
+    res.status(200).json({
+      success: true,
+      count: submissions.length,
+      data: submissions
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete assignment
 // @route   DELETE /api/assignments/:id
 // @access  Protected (Teacher/Admin)
@@ -290,6 +331,65 @@ exports.deleteAssignment = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Assignment deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all assignments for a teacher
+// @route   GET /api/assignments/teacher/my-assignments
+// @access  Protected (Teacher)
+exports.getTeacherAssignments = async (req, res, next) => {
+  try {
+    const courses = await Course.find({ instructor: req.user.id });
+    const courseIds = courses.map(c => c._id);
+
+    const assignments = await Assignment.find({ course: { $in: courseIds } })
+      .populate('course', 'title')
+      .sort('-createdAt');
+
+    res.status(200).json({
+      success: true,
+      count: assignments.length,
+      data: assignments
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update assignment
+// @route   PUT /api/assignments/:id
+// @access  Protected (Teacher/Admin)
+exports.updateAssignment = async (req, res, next) => {
+  try {
+    let assignment = await Assignment.findById(req.params.id).populate('course');
+
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found'
+      });
+    }
+
+    // Check authorization
+    if (assignment.course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this assignment'
+      });
+    }
+
+    assignment = await Assignment.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    }).populate('course', 'title');
+
+    res.status(200).json({
+      success: true,
+      message: 'Assignment updated successfully',
+      data: assignment
     });
   } catch (error) {
     next(error);

@@ -14,28 +14,28 @@
   --primary-light: #3B82F6;
   --secondary: #10B981;
   --accent: #F59E0B;
-  
+
   /* Background Colors */
   --bg-main: #F0F4FF;
   --bg-sidebar: #FFFFFF;
   --bg-card: #FFFFFF;
-  
+
   /* Text Colors */
   --text-primary: #1F2937;
   --text-secondary: #6B7280;
   --text-muted: #9CA3AF;
-  
+
   /* Utility Colors */
   --border: #E5E7EB;
   --success: #10B981;
   --warning: #F59E0B;
   --error: #EF4444;
-  
+
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
-  
+
   /* Transitions */
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -77,7 +77,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===================================
@@ -2154,6 +2156,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2199,4 +2202,294 @@ body {
 .placeholder-section p {
   font-size: 1rem;
   color: var(--text-secondary);
+}
+
+/* ===================================
+   NEW SECTIONS STYLING
+   =================================== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.create-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.create-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Data Table Styles */
+.data-table-container {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table th {
+  padding: 1.25rem;
+  background: #f9fafb;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.student-info img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.student-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.submission-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.action-btn-sm {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.action-btn-sm:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Assignment Grid Styles */
+.assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.assignment-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assignment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.card-course-tag {
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+  background: rgba(30, 58, 138, 0.05);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.card-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Analytics Section */
+.analytics-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.stats-grid-mini {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-pill {
+  background: var(--bg-main);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.pill-label {
+  color: var(--text-secondary);
+}
+
+.pill-value {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.analytics-charts {
+  margin-top: 2rem;
+}
+
+/* Announcements Section */
+.announcements-section {
+  display: flex;
+  justify-content: center;
+}
+
+.announcement-composer {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+  max-width: 800px;
+  border: 1px solid var(--border);
+}
+
+.composer-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+
+.composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.send-btn {
+  padding: 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: 1rem;
+}
+
+.send-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 58, 138, 0.3);
+}
+
+.send-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Grades & Submissions */
+.submissions-modal {
+  max-width: 900px !important;
+}
+
+.submission-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  gap: 1.5rem;
+}
+
+.view-file-btn {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-file-btn:hover {
+  text-decoration: underline;
+}
+
+.grade-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.grade-input-group input {
+  width: 80px;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.grade-badge {
+  background: var(--success);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Modal Enhancements */
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.empty-msg {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem;
 }

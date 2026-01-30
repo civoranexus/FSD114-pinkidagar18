@@ -5,6 +5,7 @@ const Attendance = require('../models/Attendance');
 const Notification = require('../models/Notification');
 const Enrollment = require('../models/Enrollment');
 const Assignment = require('../models/Assignment');
+const Submission = require('../models/Submission');
 
 // ============================================
 // USER MANAGEMENT
@@ -171,7 +172,7 @@ exports.updateUser = async (req, res, next) => {
     };
 
     // Remove undefined fields
-    Object.keys(fieldsToUpdate).forEach(key => 
+    Object.keys(fieldsToUpdate).forEach(key =>
       fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
     );
 
@@ -484,7 +485,7 @@ exports.getSystemStats = async (req, res, next) => {
     // Attendance rate
     const attendanceRecords = await Attendance.find();
     const presentCount = attendanceRecords.filter(a => a.status === 'present').length;
-    const avgAttendance = attendanceRecords.length > 0 
+    const avgAttendance = attendanceRecords.length > 0
       ? ((presentCount / attendanceRecords.length) * 100).toFixed(1)
       : 0;
 
