@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
@@ -255,11 +255,11 @@ const AdminDashboard = () => {
     <div className="admin-dashboard">
       {/* Sidebar */}
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
+        <Link to="/" className="sidebar-logo">
           <div className="logo-icon">🎓</div>
           <div className="logo-text">EduVillage</div>
           <div className="logo-subtitle">Admin Portal</div>
-        </div>
+        </Link>
 
         <nav className="sidebar-nav">
           <div
@@ -334,6 +334,15 @@ const AdminDashboard = () => {
             <span className="nav-icon">⚙️</span>
             <span className="nav-text">Settings</span>
           </div>
+          <hr className="sidebar-divider" />
+          <Link to="/teacher/dashboard" className="nav-item">
+            <span className="nav-icon">👨‍🏫</span>
+            <span className="nav-text">Teacher View</span>
+          </Link>
+          <Link to="/student/dashboard" className="nav-item">
+            <span className="nav-icon">👁️</span>
+            <span className="nav-text">Student View</span>
+          </Link>
         </nav>
 
         <div className="sidebar-footer">

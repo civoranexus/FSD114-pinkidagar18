@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
@@ -209,12 +209,31 @@ const StudentDashboard = () => {
   const stopFaceCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
       setIsCameraActive(false);
     }
   };
 
+  const ensureSelectedClass = () => {
+    if (selectedClass) return true;
+    if (upcomingClasses && upcomingClasses.length > 0) {
+      // Pick the first class as default if none selected (e.g. from attendance tab)
+      setSelectedClass(upcomingClasses[0]);
+      return true;
+    }
+    toast.error('No upcoming classes found to mark attendance for');
+    return false;
+  };
+
   const captureFaceAttendance = async () => {
     if (!canvasRef.current || !videoRef.current) return;
+
+    // Ensure we have a class selected
+    const activeClass = selectedClass || (upcomingClasses && upcomingClasses[0]);
+    if (!activeClass) {
+      toast.error('Please select a class first or join an upcoming class');
+      return;
+    }
 
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -225,26 +244,37 @@ const StudentDashboard = () => {
     context.drawImage(video, 0, 0);
 
     canvas.toBlob(async (blob) => {
+      if (!blob) {
+        toast.error('Failed to capture image');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('image', blob, 'face-capture.jpg');
+      formData.append('courseId', activeClass.course?._id || activeClass.course);
+      formData.append('classId', activeClass._id);
 
       try {
-        const formData = new FormData();
-        formData.append('image', blob, 'face-capture.jpg');
-        formData.append('courseId', selectedClass?.course?._id);
-        formData.append('classId', selectedClass?._id);
-
         await api.post('/attendance/mark-face', formData);
         toast.success('✅ Attendance marked successfully!');
         stopFaceCamera();
         fetchAttendance();
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Face recognition failed');
+        const message = error.response?.data?.message || 'Face recognition failed';
+        toast.error(message);
+        console.error('Face error:', error);
       }
     }, 'image/jpeg');
   };
 
   const startQRScanner = async () => {
+    // Ensure we have a class selected
+    const activeClass = selectedClass || (upcomingClasses && upcomingClasses[0]);
+    if (!activeClass) {
+      toast.error('Please select a class first or join an upcoming class');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
@@ -256,22 +286,26 @@ const StudentDashboard = () => {
         toast.info('📷 Point camera at QR code');
 
         // SIMULATION: Automatically mark attendance after 3 seconds
+        // In a real app, this would use a library like jsQR or react-qr-reader
         setTimeout(async () => {
           try {
             await api.post('/attendance/mark-qr', {
               qrCode: 'mock-qr-123',
-              courseId: selectedClass?.course?._id,
-              classId: selectedClass?._id
+              courseId: activeClass.course?._id || activeClass.course,
+              classId: activeClass._id
             });
             toast.success('✅ QR Code detected! Attendance marked.');
             stopQRScanner();
             fetchAttendance();
           } catch (error) {
             console.error('QR Mark error:', error);
+            const message = error.response?.data?.message || 'QR scanner failed';
+            toast.error(message);
           }
         }, 3000);
       }
     } catch (error) {
+      console.error('Camera error:', error);
       toast.error('Failed to access camera');
     }
   };
@@ -326,7 +360,7 @@ const StudentDashboard = () => {
 
   const attendanceData = [
     { name: 'Present', value: attendanceRecords.filter(r => r.status === 'present').length },
-    { name: 'Absent', value: attendanceRecords.filter(r => r.status === 'absent').length }
+    { name: 'Absent', value: attendanceRecords.filter(r => r.status === 'absent' || r.status === 'late').length }
   ];
 
   const COLORS = ['#10B981', '#EF4444'];
@@ -369,10 +403,11 @@ const StudentDashboard = () => {
       setAiChatMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Chat error:', error);
-      toast.error('Failed to get response from AI Tutor');
+      const backendError = error.response?.data?.message || 'Failed to get response from AI Tutor';
+      toast.error(backendError);
       const errorMessage = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
+        content: `Sorry, I encountered an error: ${backendError}`
       };
       setAiChatMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -394,11 +429,11 @@ const StudentDashboard = () => {
     <div className="student-dashboard">
       {/* Sidebar */}
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
+        <Link to="/" className="sidebar-logo">
           <div className="logo-icon">🎓</div>
           <div className="logo-text">EduVillage</div>
           <div className="logo-subtitle">Student Portal</div>
-        </div>
+        </Link>
 
         <nav className="sidebar-nav">
           <div
@@ -793,8 +828,8 @@ const StudentDashboard = () => {
                     <tbody>
                       {attendanceRecords.map((record, idx) => (
                         <tr key={idx}>
-                          <td>{new Date(record.date).toLocaleDateString()}</td>
-                          <td>{record.course}</td>
+                          <td>{new Date(record.date || record.markedAt).toLocaleDateString()}</td>
+                          <td>{record.course?.title || record.course || 'N/A'}</td>
                           <td>
                             <span className={`status-badge ${record.status}`}>
                               {record.status}

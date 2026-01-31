@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { toast } from 'react-toastify';
@@ -9,7 +9,7 @@ const CoursePlayer = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [course, setCourse] = useState(null);
   const [progress, setProgress] = useState(null);
   const [currentModule, setCurrentModule] = useState(0);
@@ -37,7 +37,7 @@ const CoursePlayer = () => {
         const lessonIndex = courseRes.data.data.modules[moduleIndex]?.lessons.findIndex(
           l => l._id === progressRes.data.data.lastAccessedLesson.lessonId
         );
-        
+
         if (moduleIndex >= 0 && lessonIndex >= 0) {
           setCurrentModule(moduleIndex);
           setCurrentLesson(lessonIndex);
@@ -53,7 +53,7 @@ const CoursePlayer = () => {
 
   const handleLessonComplete = async () => {
     const lesson = course.modules[currentModule].lessons[currentLesson];
-    
+
     try {
       const { data } = await api.post(`/progress/${id}/complete-lesson`, {
         lessonId: lesson._id,
@@ -82,7 +82,7 @@ const CoursePlayer = () => {
   const goToLesson = (moduleIndex, lessonIndex) => {
     setCurrentModule(moduleIndex);
     setCurrentLesson(lessonIndex);
-    
+
     const module = course.modules[moduleIndex];
     const lesson = module.lessons[lessonIndex];
     updateLastAccessed(module._id, lesson._id);
@@ -90,7 +90,7 @@ const CoursePlayer = () => {
 
   const goToNextLesson = () => {
     const currentModuleObj = course.modules[currentModule];
-    
+
     if (currentLesson < currentModuleObj.lessons.length - 1) {
       goToLesson(currentModule, currentLesson + 1);
     } else if (currentModule < course.modules.length - 1) {
@@ -134,12 +134,15 @@ const CoursePlayer = () => {
               {progress?.progressPercentage || 0}% Complete
             </div>
             <div className="progress-bar">
-              <div 
+              <div
                 className="progress-fill"
                 style={{ width: `${progress?.progressPercentage || 0}%` }}
               />
             </div>
           </div>
+          <Link to="/student/dashboard" className="back-to-dashboard-player">
+            ← Back to Dashboard
+          </Link>
         </div>
 
         <div className="modules-list">
@@ -157,11 +160,10 @@ const CoursePlayer = () => {
                 {module.lessons.map((lesson, lessonIndex) => (
                   <div
                     key={lesson._id}
-                    className={`lesson-item ${
-                      moduleIndex === currentModule && lessonIndex === currentLesson
-                        ? 'active'
-                        : ''
-                    } ${isLessonCompleted(lesson._id) ? 'completed' : ''}`}
+                    className={`lesson-item ${moduleIndex === currentModule && lessonIndex === currentLesson
+                      ? 'active'
+                      : ''
+                      } ${isLessonCompleted(lesson._id) ? 'completed' : ''}`}
                     onClick={() => goToLesson(moduleIndex, lessonIndex)}
                   >
                     <div className="lesson-status">
@@ -212,7 +214,7 @@ const CoursePlayer = () => {
               </div>
             ) : (
               <div className="link-content">
-                <a 
+                <a
                   href={currentLessonObj.contentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
