@@ -52,7 +52,7 @@ const CourseDetail = () => {
       return;
     }
 
-    try {
+    try { 
       await api.post(`/courses/${id}/enroll`);
       toast.success('Successfully enrolled! 🎉');
       setEnrolled(true);
