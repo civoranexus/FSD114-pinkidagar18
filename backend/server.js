@@ -147,13 +147,6 @@ app.get('/api', (req, res) => {
 const frontendDist = path.join(__dirname, '../frontend/dist');
 const fs = require('fs');
 
-console.log('--- Static File Serving Debug Info ---');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Dataset __dirname:', __dirname);
-console.log('Frontend Dist Path:', frontendDist);
-console.log('Frontend Dist Exists:', fs.existsSync(frontendDist));
-console.log('--------------------------------------');
-
 if (process.env.NODE_ENV === 'production' || (fs.existsSync(frontendDist) && process.env.NODE_ENV !== 'test')) {
   // Set static folder
   app.use(express.static(frontendDist));
