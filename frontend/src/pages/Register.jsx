@@ -43,22 +43,24 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const { data } = await api.post('/auth/register', {
+      const { data: responseData } = await api.post('/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: formData.role
       });
 
-      login(data.token, data.user);
-      toast.success(`Welcome to EduVillage, ${data.user.name}! 🎉`);
+      const { token, user: userData } = responseData.data;
+
+      login(token, userData);
+      toast.success(`Welcome to EduVillage, ${userData.name}! 🎉`);
 
       setTimeout(() => {
-        if (data.user.role === 'student') {
+        if (userData.role === 'student') {
           navigate('/student/dashboard');
-        } else if (data.user.role === 'teacher') {
+        } else if (userData.role === 'teacher') {
           navigate('/teacher/dashboard');
-        } else if (data.user.role === 'admin') {
+        } else if (userData.role === 'admin') {
           navigate('/admin/dashboard');
         }
       }, 500);

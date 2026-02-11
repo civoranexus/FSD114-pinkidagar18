@@ -76,13 +76,13 @@ app.use(cacheControl(300)); // 5 minutes default
 // Import route modules
 const authRoutes = require('./routes/authRoutes');
 const courseRoutes = require('./routes/courseRoutes');
-const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const enrollmentRoutes = require('./routes/Enrollmentroutes');
 const progressRoutes = require('./routes/progressRoutes');
 const assignmentRoutes = require('./routes/Assignmentroutes');
-const attendanceRoutes = require('./routes/attendanceRoutes');
-const certificateRoutes = require('./routes/certificateRoutes');
-const classRoutes = require('./routes/classRoutes');
-const adminRoutes = require('./routes/adminroutes');
+const attendanceRoutes = require('./routes/Attendanceroutes');
+const certificateRoutes = require('./routes/Certificateroutes');
+const classRoutes = require('./routes/Classroutes');
+const adminRoutes = require('./routes/Adminroutes');
 const aiRoutes = require('./routes/aiRoutes');
 const teacherRoutes = require('./routes/TeacherRoutes');
 

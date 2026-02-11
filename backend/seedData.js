@@ -281,37 +281,59 @@ const sampleCourses = [
 const seedDatabase = async () => {
   try {
     await connectDB();
-    
+
     console.log('🗑️  Clearing existing courses...');
     await Course.deleteMany({});
-    
-    console.log('👤 Finding or creating a teacher...');
-    let teacher = await User.findOne({ role: 'teacher' });
-    
+
+    console.log('👤 Creating demo accounts...');
+
+    // Create Teacher
+    let teacher = await User.findOne({ email: 'teacher@test.com' });
     if (!teacher) {
       teacher = await User.create({
-        name: 'Expert Instructor',
-        email: 'teacher@eduvillage.com',
+        name: 'Demo Teacher',
+        email: 'teacher@test.com',
         password: 'password123',
         role: 'teacher'
       });
-      console.log('✅ Teacher created: teacher@eduvillage.com');
+      console.log('   ✓ Teacher: teacher@test.com / password123');
     }
-    
+
+    // Create Student
+    let student = await User.findOne({ email: 'student@test.com' });
+    if (!student) {
+      student = await User.create({
+        name: 'Demo Student',
+        email: 'student@test.com',
+        password: 'password123',
+        role: 'student'
+      });
+      console.log('   ✓ Student: student@test.com / password123');
+    }
+
+    // Create Admin
+    let admin = await User.findOne({ email: 'superadmin@eduvillage.com' });
+    if (!admin) {
+      admin = await User.create({
+        name: 'Super Admin',
+        email: 'superadmin@eduvillage.com',
+        password: 'admin123',
+        role: 'admin'
+      });
+      console.log('   ✓ Admin:   superadmin@eduvillage.com / admin123');
+    }
+
     console.log('📚 Adding sample courses...');
-    
+
     for (let courseData of sampleCourses) {
       courseData.instructor = teacher._id;
       const course = await Course.create(courseData);
       console.log(`   ✓ Created: ${course.title}`);
     }
-    
-    console.log('\n✅ SUCCESS! Added 8 sample courses to database!');
-    console.log('🎓 You can now browse courses at: http://localhost:3000/courses');
-    console.log('\n📝 Teacher login credentials:');
-    console.log('   Email: teacher@eduvillage.com');
-    console.log('   Password: password123');
-    
+
+    console.log('\n✅ SUCCESS! Database seeded with demo accounts!');
+    console.log('🎓 You can now use the demo buttons in the Login page.');
+
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Error seeding database:', error.message);
