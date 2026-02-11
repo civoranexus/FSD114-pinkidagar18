@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const dns = require('dns');
+
+// Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 const Course = require('./models/Course');
 const User = require('./models/User');
 const connectDB = require('./config/database');
