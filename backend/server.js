@@ -1,4 +1,9 @@
 const express = require('express');
+const dns = require('dns');
+
+// Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const dotenv = require('dotenv');
 const cors = require('cors');
 const morgan = require('morgan');
