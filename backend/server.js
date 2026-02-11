@@ -143,12 +143,16 @@ app.get('/api', (req, res) => {
 });
 
 // Serve static assets in production
-if (process.env.NODE_ENV === 'production') {
+// Serve static assets in production or if build exists
+const frontendDist = path.join(__dirname, '../frontend/dist');
+const fs = require('fs');
+
+if (process.env.NODE_ENV === 'production' || (fs.existsSync(frontendDist) && process.env.NODE_ENV !== 'test')) {
   // Set static folder
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.use(express.static(frontendDist));
 
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../', 'frontend', 'dist', 'index.html'));
+    res.sendFile(path.resolve(frontendDist, 'index.html'));
   });
 }
 
