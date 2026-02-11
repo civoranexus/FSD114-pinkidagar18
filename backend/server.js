@@ -1,5 +1,6 @@
 const express = require('express');
 const dns = require('dns');
+const path = require('path');
 
 // Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records
 dns.setServers(['8.8.8.8', '8.8.4.4']);
@@ -141,7 +142,16 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Cache statistics endpoint (development only)
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
+  // Set static folder
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../', 'frontend', 'dist', 'index.html'));
+  });
+}
+
 if (process.env.NODE_ENV === 'development') {
   const { getCacheStats, clearCache } = require('./middleware/Cache');
 
