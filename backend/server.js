@@ -149,12 +149,30 @@ app.get('/api', (req, res) => {
 const frontendDist = path.join(__dirname, '../frontend/dist');
 const fs = require('fs');
 
+console.log('--- Static File Serving Debug Info ---');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Dataset __dirname:', __dirname);
+console.log('Frontend Dist Path:', frontendDist);
+console.log('Frontend Dist Exists:', fs.existsSync(frontendDist));
+try {
+  console.log('Contents of ../:', fs.readdirSync(path.join(__dirname, '../')));
+  console.log('Contents of ../frontend:', fs.readdirSync(path.join(__dirname, '../frontend')));
+} catch (err) {
+  console.log('Error listing directories:', err.message);
+}
+console.log('--------------------------------------');
+
 if (process.env.NODE_ENV === 'production' || (fs.existsSync(frontendDist) && process.env.NODE_ENV !== 'test')) {
   // Set static folder
   app.use(express.static(frontendDist));
 
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(frontendDist, 'index.html'));
+  });
+} else {
+  // Fallback for root route to satisfy Render health check
+  app.get('/', (req, res) => {
+    res.status(200).send('EduVillage API is running. (Frontend build not found)');
   });
 }
 
