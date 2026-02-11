@@ -2,8 +2,10 @@ const express = require('express');
 const dns = require('dns');
 const path = require('path');
 
-// Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+// Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records (Dev Only)
+if (process.env.NODE_ENV === 'development') {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -194,23 +196,23 @@ app.use(errorLogger);
 // Global error handler - must be last
 app.use(errorHandler);
 
-// ===========================================
-// SERVER INITIALIZATION
-// ===========================================
+
 
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-const server = app.listen(PORT, () => {
+// Explicitly bind to 0.0.0.0 for Render
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('===========================================');
   console.log(`🚀 EduVillage Server Started`);
   console.log(`===========================================`);
   console.log(`📍 Environment: ${NODE_ENV}`);
   console.log(`🌐 Port: ${PORT}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`📚 API: http://localhost:${PORT}/api`);
-  console.log(`💚 Health: http://localhost:${PORT}/api/health`);
+  console.log(`🔗 URL: http://0.0.0.0:${PORT}`);
+  console.log(`📚 API: http://0.0.0.0:${PORT}/api`);
+  console.log(`💚 Health: http://0.0.0.0:${PORT}/api/health`);
   console.log('===========================================');
+  console.log(`DEBUG: process.env.PORT is ${process.env.PORT ? 'SET' : 'UNSET'} (${process.env.PORT})`);
 });
 
 // ===========================================
