@@ -8,7 +8,7 @@ const {
   deleteAttendance,
   verifyFaceAttendance,
   verifyQRAttendance
-} = require('../controllers/attendanceController');
+} = require('../controllers/Attendancecontroller');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/Upload');
 

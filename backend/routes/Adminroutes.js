@@ -17,7 +17,7 @@ const {
   getAllNotifications,
   deleteNotification,
   generateReport
-} = require('../controllers/adminController');
+} = require('../controllers/Admincontroller');
 const { protect, authorize } = require('../middleware/auth');
 
 // All admin routes require admin role

@@ -5,7 +5,7 @@ const {
   getMyEnrollments,
   unenrollFromCourse,
   getEnrollmentProgress
-} = require('../controllers/enrollmentController');
+} = require('../controllers/Enrollmentcontroller');
 const { protect, authorize } = require('../middleware/auth');
 
 // All enrollment routes require student role

@@ -5,7 +5,7 @@ const {
   generateCertificate,
   verifyCertificate,
   downloadCertificate
-} = require('../controllers/certificateController');
+} = require('../controllers/Certificatecontroller');
 const { protect, authorize } = require('../middleware/auth');
 
 // Student routes - View and download certificates

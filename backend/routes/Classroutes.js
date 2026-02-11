@@ -7,7 +7,7 @@ const {
   updateClass,
   deleteClass,
   joinClass
-} = require('../controllers/classController');
+} = require('../controllers/Classcontroller');
 const { protect, authorize } = require('../middleware/auth');
 
 // Student routes - View and join classes
