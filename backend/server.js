@@ -3,9 +3,9 @@ const dns = require('dns');
 const path = require('path');
 
 // Force Google DNS for this process to bypass local ISP blocks on MongoDB SRV records (Dev Only)
-if (process.env.NODE_ENV === 'development') {
-  dns.setServers(['8.8.8.8', '8.8.4.4']);
-}
+// if (process.env.NODE_ENV === 'development') {
+//   dns.setServers(['8.8.8.8', '8.8.4.4']);
+// }
 
 const dotenv = require('dotenv');
 const cors = require('cors');
