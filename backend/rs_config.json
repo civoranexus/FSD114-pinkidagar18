@@ -1,0 +1,67 @@
+{
+  "topologyVersion": {
+    "processId": "6986109f7ca2382b706a67f7",
+    "counter": 4
+  },
+  "hosts": [
+    "ac-sngwudf-shard-00-00.spwsz3h.mongodb.net:27017",
+    "ac-sngwudf-shard-00-01.spwsz3h.mongodb.net:27017",
+    "ac-sngwudf-shard-00-02.spwsz3h.mongodb.net:27017"
+  ],
+  "setName": "atlas-d9dc8g-shard-0",
+  "setVersion": 278,
+  "isWritablePrimary": false,
+  "secondary": true,
+  "primary": "ac-sngwudf-shard-00-01.spwsz3h.mongodb.net:27017",
+  "tags": {
+    "availabilityZone": "aps1-az1",
+    "nodeType": "ELECTABLE",
+    "diskState": "READY",
+    "provider": "AWS",
+    "region": "AP_SOUTH_1",
+    "workloadType": "OPERATIONAL"
+  },
+  "me": "ac-sngwudf-shard-00-00.spwsz3h.mongodb.net:27017",
+  "lastWrite": {
+    "opTime": {
+      "ts": {
+        "$timestamp": "7605953873634656261"
+      },
+      "t": 272
+    },
+    "lastWriteDate": "2026-02-12T12:25:36.000Z",
+    "majorityOpTime": {
+      "ts": {
+        "$timestamp": "7605953873634656261"
+      },
+      "t": 272
+    },
+    "majorityWriteDate": "2026-02-12T12:25:36.000Z"
+  },
+  "maxBsonObjectSize": 16777216,
+  "maxMessageSizeBytes": 48000000,
+  "maxWriteBatchSize": 100000,
+  "localTime": "2026-02-12T12:25:36.344Z",
+  "logicalSessionTimeoutMinutes": 30,
+  "connectionId": 257710,
+  "minWireVersion": 0,
+  "maxWireVersion": 25,
+  "readOnly": false,
+  "ok": 1,
+  "$clusterTime": {
+    "clusterTime": {
+      "$timestamp": "7605953873634656261"
+    },
+    "signature": {
+      "hash": "/xQlWH8gFKK2/Gy0ex2W7xc8tH4=",
+      "keyId": {
+        "low": 17,
+        "high": 1757691033,
+        "unsigned": false
+      }
+    }
+  },
+  "operationTime": {
+    "$timestamp": "7605953873634656261"
+  }
+}

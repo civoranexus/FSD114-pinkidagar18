@@ -1,0 +1,48 @@
+🔄 Connecting to MongoDB...
+📡 Connection Format: Standard
+🔍 URI Prefix: mongodb://sneha...
+⏱️  Timeout Settings: 60s
+--- Static File Serving Debug Info ---
+NODE_ENV: development
+Dataset __dirname: C:\Users\pc\OneDrive\Attachments\Desktop\FSD114-pinkidagar18\backend
+Frontend Dist Path: C:\Users\pc\OneDrive\Attachments\Desktop\FSD114-pinkidagar18\frontend\dist
+Frontend Dist Exists: true
+Contents of ../: [
+  '.git',
+  '.github',
+  '.gitignore',
+  'backend',
+  'CODE_OF_CONDUCT.md',
+  'CONTRIBUTING.md',
+  'docs',
+  'frontend',
+  'LICENSE',
+  'package.json',
+  'README.md',
+  'resources',
+  'uploads'
+]
+Contents of ../frontend: [
+  '.env',
+  '.gitignore',
+  'API_DOCUMENTATION.md',
+  'DEPLOYMENT.md',
+  'dist',
+  'error.log',
+  'index.html',
+  'node_modules',
+  'package-lock.json',
+  'package.json',
+  'public',
+  'src',
+  'vercel.json',
+  'vite.config.js'
+]
+--------------------------------------
+❌ Uncaught Exception: listen EADDRINUSE: address already in use 0.0.0.0:5000
+🔴 Server shutting down due to uncaught exception
+Stack: Error: listen EADDRINUSE: address already in use 0.0.0.0:5000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at node:net:2206:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
